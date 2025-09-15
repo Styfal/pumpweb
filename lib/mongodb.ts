@@ -1,67 +1,61 @@
-import { MongoClient, Db } from "mongodb"
+// lib/mongodb.ts
+import { MongoClient, Db, ServerApiVersion } from "mongodb";
+import path from "node:path";
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("Please add your Mongo URI to .env.local")
-}
+const uri = process.env.MONGODB_URI;
+if (!uri) throw new Error("Please add your Mongo URI to environment variables");
 
-const uri: string = process.env.MONGODB_URI
-const options = {
+const allowInsecure = process.env.MONGODB_TLS_INSECURE === "1"; // ← only if you fully accept the risk
+const caFile = process.env.MONGODB_TLS_CA_FILE; // e.g., "certs/rds-combined-ca-bundle.pem" for DocDB
+const isDocDB = process.env.MONGODB_PROVIDER === "docdb";
+
+const clientOptions = {
+  // Connectivity & pools
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
-  ssl: true,
-  tls: true,
-  retryWrites: true,
-  retryReads: true,
   minPoolSize: 0,
-  tlsAllowInvalidCertificates: process.env.NODE_ENV === "development"
-}
+  serverSelectionTimeoutMS: 30_000,
+  socketTimeoutMS: 45_000,
+  connectTimeoutMS: 10_000,
 
-let client: MongoClient | null = null
-let clientPromise: Promise<MongoClient> | null = null
-let db: Db | null = null
+  // TLS
+  tls: true,
+  // Prefer a proper CA bundle over disabling checks:
+  tlsCAFile: caFile ? path.join(process.cwd(), caFile) : undefined,
+  // The following relaxations should be gated and avoided in production when possible:
+  tlsAllowInvalidCertificates: allowInsecure || undefined,
+  tlsAllowInvalidHostnames: (allowInsecure || isDocDB) || undefined,
 
-if (process.env.NODE_ENV === "development") {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  const globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>
-  }
+  // Retry semantics
+  retryReads: true,
+  retryWrites: isDocDB ? false : true, // DocDB often doesn’t support retryable writes
 
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options)
-    globalWithMongo._mongoClientPromise = client.connect()
-  }
-  clientPromise = globalWithMongo._mongoClientPromise
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options)
-  clientPromise = client.connect()
-}
+  // Stable server API (Atlas-friendly)
+  serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+} as const;
+
+let client: MongoClient | null = null;
+let db: Db | null = null;
 
 export async function getDb(): Promise<Db> {
-  if (!clientPromise) {
-    // Reinitialize if needed
-    client = new MongoClient(uri, options)
-    clientPromise = client.connect()
-  }
-  
+  if (db) return db;
+
   try {
-    if (!db) {
-      const client = await clientPromise
-      db = client.db()
-      // Verify the connection
-      await db.command({ ping: 1 })
-      console.log("Successfully connected to MongoDB")
+    if (!client) {
+      client = new MongoClient(uri as string, clientOptions);
+      await client.connect();
     }
-    return db
-  } catch (error) {
-    console.error("MongoDB connection error:", error)
-    // Reset everything for next attempt
-    client = null
-    db = null
-    clientPromise = null
-    throw new Error("Database connection failed")
+    db = client.db();
+    // lightweight connectivity check
+    await db.command({ ping: 1 });
+    return db;
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    // reset so next request can retry a fresh client
+    try {
+      await client?.close();
+    } catch {}
+    client = null;
+    db = null;
+    throw new Error("Database connection failed");
   }
 }
