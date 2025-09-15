@@ -56,14 +56,14 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { portfolioId: string } }
+  context: { params: { portfolioId: string } }
 ) {
   try {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params
+    const { portfolioId } = context.params
     const db = await getDb()
 
     const res = await db.collection("portfolios").deleteOne(parseId(portfolioId))
