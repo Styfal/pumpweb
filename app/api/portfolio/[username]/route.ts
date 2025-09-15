@@ -11,9 +11,10 @@ interface TemplateDoc {
   css_template?: string
 }
 
-export async function GET(_request: NextRequest, { params }: { params: { username: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   try {
-    const { username } = params
+    // Await the params
+    const { username } = await params
     const db = await getDb()
 
     // 1) Find the published portfolio for this username
