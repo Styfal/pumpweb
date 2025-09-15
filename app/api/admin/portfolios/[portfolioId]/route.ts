@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId, Filter, Document } from "mongodb"
 
-function parseId(portfolioId: string): Filter<Document> {
+function parseId(portfolioId: string): { $or: Filter<Document>[] } {
   // allow either custom string id or Mongo _id
   const or: Filter<Document>[] = [{ id: portfolioId }]
   if (ObjectId.isValid(portfolioId)) {
