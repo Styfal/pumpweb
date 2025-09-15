@@ -17,7 +17,8 @@ type PortfolioDoc = {
   // ...add any other fields you store
 }
 
-type RouteContext = { params: { portfolioId: string } }
+// Updated RouteContext with Promise params
+type RouteContext = { params: Promise<{ portfolioId: string }> }
 
 // Build a typed $or filter for id or _id
 function parseId(portfolioId: string): Filter<PortfolioDoc> {
@@ -43,7 +44,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params
+    // Await the params
+    const { portfolioId } = await params
     const update = (await request.json().catch(() => ({}))) as Partial<PortfolioDoc>
     if (!update || typeof update !== "object") {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 })
@@ -73,7 +75,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params
+    // Await the params
+    const { portfolioId } = await params
     const db = await getDb()
     const col = db.collection<PortfolioDoc>("portfolios")
 
