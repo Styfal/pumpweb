@@ -9,6 +9,11 @@ const options = {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
+  ssl: true,
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+  tlsAllowInvalidHostnames: false,
+  retryWrites: true
 }
 
 let client: MongoClient | null = null
@@ -42,10 +47,16 @@ export async function getDb(): Promise<Db> {
     if (!db) {
       const client = await clientPromise
       db = client.db()
+      // Test the connection
+      await db.command({ ping: 1 })
     }
     return db
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error)
+    // Reset the connection
+    client = null
+    db = null
+    clientPromise = null
     throw new Error("Failed to connect to database")
   }
 }
