@@ -1,39 +1,53 @@
 // app/api/portfolios/[portfolioId]/route.ts
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
-import { ObjectId, Filter, Document } from "mongodb"
+import { ObjectId, type Filter } from "mongodb"
 
-function parseId(portfolioId: string): Filter<Document> {
-  // allow either custom string id or Mongo _id
-  const or: Filter<Document>[] = [{ id: portfolioId }]
+// ---- Typed Mongo schema for this collection ----
+type PortfolioDoc = {
+  _id: ObjectId
+  id?: string                 // if you also keep a custom string id
+  username: string
+  token_name?: string
+  is_published?: boolean
+  updated_at?: Date
+  // add any other fields you actually store...
+}
+
+// Helper: build a typed $or filter for id or _id
+function parseId(portfolioId: string): Filter<PortfolioDoc> {
+  const or: Filter<PortfolioDoc>[] = [{ id: portfolioId }]
   if (ObjectId.isValid(portfolioId)) {
     or.push({ _id: new ObjectId(portfolioId) })
   }
   return { $or: or }
 }
-function isAuthorized(req: NextRequest) {
+
+function isAuthorized(req: Request) {
   const expected = process.env.ADMIN_ACCESS_KEY
   if (!expected) return false
-  const headerKey =
-    req.headers.get("x-admin-access-key") ??
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+  const authHeader = req.headers.get("authorization")
+  const bearerToken = authHeader?.replace(/^Bearer\s+/i, "")
+  const headerKey = req.headers.get("x-admin-access-key") ?? bearerToken
   return headerKey === expected
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { portfolioId: string } }
-) {
+type RouteContext = { params: { portfolioId: string } }
+
+// PATCH /api/portfolios/[portfolioId]
+export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const { portfolioId } = params
-    const body = await request.json()
+    const body = (await request.json()) as Partial<PortfolioDoc>
 
     const db = await getDb()
-    const res = await db.collection("portfolios").updateOne(
+    const portfolios = db.collection<PortfolioDoc>("portfolios")
+
+    const res = await portfolios.updateOne(
       parseId(portfolioId),
       {
         $set: {
@@ -54,10 +68,8 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { portfolioId: string } }
-) {
+// DELETE /api/portfolios/[portfolioId]
+export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -65,8 +77,9 @@ export async function DELETE(
 
     const { portfolioId } = params
     const db = await getDb()
+    const portfolios = db.collection<PortfolioDoc>("portfolios")
 
-    const res = await db.collection("portfolios").deleteOne(parseId(portfolioId))
+    const res = await portfolios.deleteOne(parseId(portfolioId))
 
     if (res.deletedCount === 0) {
       return NextResponse.json({ error: "Portfolio not found" }, { status: 404 })
