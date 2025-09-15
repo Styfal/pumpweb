@@ -171,7 +171,7 @@ export function PortfolioBuilder() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
 
   // Validate single field
-  const validateField = useCallback((field: keyof PortfolioData, value: any) => {
+  const validateField = useCallback((field: keyof PortfolioData, value: PortfolioData[keyof PortfolioData]) => {
     try {
       const fieldSchema = portfolioSchema.shape[field]
       if (fieldSchema) {
@@ -308,7 +308,7 @@ export function PortfolioBuilder() {
       console.error("Error saving portfolio:", err)
       setError("Portfolio was paid but failed to save. Please contact support.")
     }
-  }, [formData])
+  }, [formData, paymentId])
 
 const isFormValid =
   formData.token_name.trim() !== "" &&

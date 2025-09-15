@@ -1,15 +1,16 @@
 // app/api/portfolios/[portfolioId]/route.ts
 import { type NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
+import { ObjectId, Filter, Document } from "mongodb"
 
-function parseId(portfolioId: string) {
+function parseId(portfolioId: string): Filter<Document> {
   // allow either custom string id or Mongo _id
-  const or: any[] = [{ id: portfolioId }]
-  if (ObjectId.isValid(portfolioId)) or.push({ _id: new ObjectId(portfolioId) })
+  const or: Filter<Document>[] = [{ id: portfolioId }]
+  if (ObjectId.isValid(portfolioId)) {
+    or.push({ _id: new ObjectId(portfolioId) })
+  }
   return { $or: or }
 }
-
 function isAuthorized(req: NextRequest) {
   const expected = process.env.ADMIN_ACCESS_KEY
   if (!expected) return false

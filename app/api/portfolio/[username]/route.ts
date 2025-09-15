@@ -3,6 +3,14 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 
+interface TemplateDoc {
+  _id?: ObjectId
+  name: string
+  display_name?: string
+  html_template?: string
+  css_template?: string
+}
+
 export async function GET(_request: NextRequest, { params }: { params: { username: string } }) {
   try {
     const { username } = params
@@ -19,12 +27,12 @@ export async function GET(_request: NextRequest, { params }: { params: { usernam
     }
 
     // 2) Resolve the template via either template_id (ObjectId) or template (name)
-    let templateDoc: any | null = null
+    let templateDoc: TemplateDoc | null = null
 
     // If you store a template ObjectId on the portfolio (e.g., portfolioRaw.template_id)
     const templateIdCandidate = portfolioRaw.template_id
     if (templateIdCandidate && ObjectId.isValid(String(templateIdCandidate))) {
-      templateDoc = await db.collection("templates").findOne(
+      templateDoc = await db.collection("templates").findOne<TemplateDoc>(
         { _id: new ObjectId(String(templateIdCandidate)) },
         { projection: { name: 1, display_name: 1, html_template: 1, css_template: 1 } }
       )
@@ -32,7 +40,7 @@ export async function GET(_request: NextRequest, { params }: { params: { usernam
 
     // Otherwise fall back to `template` string name on the portfolio (e.g., "default")
     if (!templateDoc && portfolioRaw.template) {
-      templateDoc = await db.collection("templates").findOne(
+      templateDoc = await db.collection("templates").findOne<TemplateDoc>(
         { name: portfolioRaw.template },
         { projection: { name: 1, display_name: 1, html_template: 1, css_template: 1 } }
       )

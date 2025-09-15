@@ -16,7 +16,6 @@ type PaymentDoc = {
   amount: number
   currency: string
   verified_at?: Date | string | null
-  // one of these should exist in your schema; adjust names if different
   portfolio_username?: string
   portfolio_id?: string
 }
@@ -28,20 +27,25 @@ type PortfolioDoc = {
   is_published?: boolean
 }
 
+// ---- Union for the $or query ----
+type PaymentQuery = { id: string } | { _id: ObjectId }
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: { paymentId: string } }
 ) {
   try {
-    const { paymentId } = await params
+    const { paymentId } = params
     const db = await getDb()
 
     const paymentsCol = db.collection<PaymentDoc>("payments")
     const portfoliosCol = db.collection<PortfolioDoc>("portfolios")
 
     // Match either custom string id or Mongo _id
-    const or: any[] = [{ id: paymentId }]
-    if (ObjectId.isValid(paymentId)) or.push({ _id: new ObjectId(paymentId) })
+    const or: PaymentQuery[] = [{ id: paymentId }]
+    if (ObjectId.isValid(paymentId)) {
+      or.push({ _id: new ObjectId(paymentId) })
+    }
 
     const payment = await paymentsCol.findOne(
       { $or: or },

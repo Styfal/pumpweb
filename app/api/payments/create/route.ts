@@ -20,7 +20,6 @@ interface CreatePaymentRequest {
   }
   amount: number
   currency?: string
-  helioChargeId?: string // <--- Added here
 }
 
 // Helper to safely get env variables
@@ -33,7 +32,7 @@ function requireEnv(key: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body: CreatePaymentRequest = await request.json()
-    const { portfolioData, amount, currency = "USD", helioChargeId } = body
+    const { portfolioData, amount, currency = "USD" } = body
 
     // Validate required fields
     if (
@@ -68,32 +67,26 @@ export async function POST(request: NextRequest) {
       is_published: false,
       created_at: new Date(),
     })
-
     if (!portfolioInsert.insertedId) {
       return NextResponse.json({ error: "Failed to create portfolio" }, { status: 500 })
     }
-
     const portfolio = await db.collection("portfolios").findOne({ _id: portfolioInsert.insertedId })
     if (!portfolio) {
       return NextResponse.json({ error: "Failed to fetch created portfolio" }, { status: 500 })
     }
 
-    // Create payment record with helioChargeId
+    // Create payment record
     const paymentInsert = await db.collection("payments").insertOne({
       portfolio_id: portfolio._id,
-      portfolio_username: portfolio.username,
-      hel_payment_id: helioChargeId ?? null,
       amount,
       currency,
       status: "pending",
-      created_at: new Date().toISOString(),
+      created_at: new Date(),
     })
-
     if (!paymentInsert.insertedId) {
       await db.collection("portfolios").deleteOne({ _id: portfolio._id })
       return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
     }
-
     const payment = await db.collection("payments").findOne({ _id: paymentInsert.insertedId })
     if (!payment) {
       await db.collection("portfolios").deleteOne({ _id: portfolio._id })
@@ -101,7 +94,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch created payment" }, { status: 500 })
     }
 
-    // Generate Helio Pay URL (fallback)
+    // Generate Helio payment URL
     const helioPaylinkId = requireEnv("HELIO_PAYLINK_ID")
     const helioPaymentUrl = `https://app.hel.io/pay/${helioPaylinkId}`
 
@@ -116,7 +109,6 @@ export async function POST(request: NextRequest) {
         id: payment._id.toString(),
         portfolio_id: portfolio._id.toString(),
         username: portfolio.username,
-        hel_payment_id: helioChargeId ?? null,
         payment_url: helioPaymentUrl,
         amount,
         currency,
@@ -125,6 +117,59 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("[v0] Payment creation error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+// Dummy function to create web design path (replace with your actual logic)
+async function createWebDesignPath(portfolioId: string) {
+  const db = await getDb()
+  await db.collection("portfolios").updateOne(
+    { _id: new ObjectId(portfolioId) },
+    { $set: { is_published: true, published_at: new Date() } }
+  )
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const sharedToken = requireEnv("HELIO_SHARED_TOKEN")
+    const helioToken = request.headers.get("x-helio-token")?.trim()
+    
+    if (!helioToken || helioToken !== sharedToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { payment_id, status } = await request.json()
+    
+    if (!payment_id || typeof payment_id !== "string" || !status) {
+      return NextResponse.json({ error: "Missing or invalid payment_id or status" }, { status: 400 })
+    }
+
+    const db = await getDb()
+    let payment;
+
+    try {
+      payment = await db.collection("payments").findOneAndUpdate(
+        { _id: new ObjectId(payment_id) },
+        { $set: { status, updated_at: new Date() } },
+        { returnDocument: "after" }
+      )
+    } catch (err) {
+      console.error("[v0] Invalid payment_id format:", err)
+      return NextResponse.json({ error: "Invalid payment_id format" }, { status: 400 })
+    }
+
+    if (!payment?.value) {
+      return NextResponse.json({ error: "Failed to update payment status" }, { status: 500 })
+    }
+
+    if (status === "completed") {
+      await createWebDesignPath(payment.value.portfolio_id.toString())
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("[v0] Payment status update error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

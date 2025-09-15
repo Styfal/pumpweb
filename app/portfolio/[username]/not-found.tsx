@@ -8,7 +8,7 @@ export default function NotFound() {
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-gray-900">Portfolio Not Found</h1>
           <p className="text-lg text-gray-600">
-            The portfolio you're looking for doesn't exist or hasn't been published yet.
+            The portfolio you&apos;re looking for doesn&apos;t exist or hasn&apos;t been published yet.
           </p>
         </div>
 
@@ -16,8 +16,8 @@ export default function NotFound() {
           <p className="text-sm text-gray-500">This could happen if:</p>
           <ul className="text-sm text-gray-500 space-y-1 max-w-md mx-auto">
             <li>• The username is incorrect</li>
-            <li>• The portfolio hasn't been published</li>
-            <li>• The payment hasn't been verified</li>
+            <li>• The portfolio hasn&apos;t been published</li>
+            <li>• The payment hasn&apos;t been verified</li>
           </ul>
         </div>
 

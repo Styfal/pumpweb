@@ -55,3 +55,49 @@ function mapPortfolio(doc: WithId<PortfolioDoc>): Portfolio {
     is_published: !!doc.is_published, // <-- REQUIRED by your Portfolio type
   }
 }
+
+export default async function PortfolioPage({ params }: PortfolioPageProps) {
+  const { username } = params
+  const db = await getDb()
+
+  // Find published portfolio and its template
+  const portfolioDoc = await db.collection("portfolios").findOne<PortfolioDoc>({ 
+    username, 
+    is_published: true 
+  })
+
+  if (!portfolioDoc) {
+    notFound()
+  }
+
+  // Get template if specified
+  let templateDoc: TemplateDoc | null = null
+  if (portfolioDoc.template) {
+    templateDoc = await db.collection("templates").findOne<TemplateDoc>({
+      name: portfolioDoc.template,
+      is_active: true
+    })
+  }
+
+  // Map DB docs to UI types
+  const portfolio = mapPortfolio(portfolioDoc)
+  const template: Template = templateDoc ? {
+    id: templateDoc._id.toString(),
+    name: templateDoc.name,
+    display_name: templateDoc.display_name ?? templateDoc.name,
+    html_template: templateDoc.html_template ?? "<div>{{content}}</div>",
+    css_template: templateDoc.css_template ?? "",
+    is_active: templateDoc.is_active,
+    created_at: toISO(templateDoc.created_at)
+  } : {
+    id: "default",
+    name: "default",
+    display_name: "Default Template",
+    html_template: "<div>{{content}}</div>",
+    css_template: "",
+    is_active: true,
+    created_at: toISO()
+  }
+
+  return <PortfolioRenderer portfolio={portfolio} template={template} />
+}
