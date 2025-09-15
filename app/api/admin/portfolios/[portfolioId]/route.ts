@@ -1,79 +1,91 @@
 // app/api/admin/portfolios/[portfolioId]/route.ts
-import { type NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
-import { ObjectId, type Filter, type Document } from "mongodb";
+import { NextResponse } from "next/server"
+import { getDb } from "@/lib/mongodb"
+import { ObjectId, type Filter } from "mongodb"
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
-function parseId(portfolioId: string): Filter<Document> {
-  // allow either custom string id or Mongo _id
-  const or: Filter<Document>[] = [{ id: portfolioId }];
-  if (ObjectId.isValid(portfolioId)) {
-    or.push({ _id: new ObjectId(portfolioId) });
-  }
-  return { $or: or };
+// ---- Collection schema (adjust as needed) ----
+type PortfolioDoc = {
+  _id: ObjectId
+  id?: string                // optional custom string id
+  username?: string
+  token_name?: string
+  is_published?: boolean
+  updated_at?: Date
+  // ...add any other fields you store
 }
 
-function isAuthorized(req: NextRequest) {
-  const expected = process.env.ADMIN_ACCESS_KEY;
-  if (!expected) return false;
+type RouteContext = { params: { portfolioId: string } }
+
+// Build a typed $or filter for id or _id
+function parseId(portfolioId: string): Filter<PortfolioDoc> {
+  const or: Filter<PortfolioDoc>[] = [{ id: portfolioId }]
+  if (ObjectId.isValid(portfolioId)) {
+    or.push({ _id: new ObjectId(portfolioId) })
+  }
+  return { $or: or }
+}
+
+function isAuthorized(req: Request) {
+  const expected = process.env.ADMIN_ACCESS_KEY
+  if (!expected) return false
   const headerKey =
     req.headers.get("x-admin-access-key") ??
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return headerKey === expected;
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+  return headerKey === expected
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { portfolioId: string } }
-) {
+export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params;
-    const update = await request.json().catch(() => ({} as Record<string, unknown>));
+    const { portfolioId } = params
+    const update = (await request.json().catch(() => ({}))) as Partial<PortfolioDoc>
     if (!update || typeof update !== "object") {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 })
     }
 
-    const db = await getDb();
-    const res = await db.collection("portfolios").updateOne(parseId(portfolioId), {
+    const db = await getDb()
+    const col = db.collection<PortfolioDoc>("portfolios")
+
+    const res = await col.updateOne(parseId(portfolioId), {
       $set: { ...update, updated_at: new Date() },
-    });
+    })
 
     if (res.matchedCount === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ ok: true, modified: res.modifiedCount });
+    return NextResponse.json({ ok: true, modified: res.modifiedCount })
   } catch (e) {
-    console.error("PATCH /admin/portfolios error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("PATCH /admin/portfolios error:", e)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { portfolioId: string } }
-) {
+export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     if (!isAuthorized(request)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params;
-    const db = await getDb();
-    const res = await db.collection("portfolios").deleteOne(parseId(portfolioId));
+    const { portfolioId } = params
+    const db = await getDb()
+    const col = db.collection<PortfolioDoc>("portfolios")
+
+    const res = await col.deleteOne(parseId(portfolioId))
 
     if (res.deletedCount === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
-    return NextResponse.json({ ok: true, deleted: res.deletedCount });
+
+    return NextResponse.json({ ok: true, deleted: res.deletedCount })
   } catch (e) {
-    console.error("DELETE /admin/portfolios error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("DELETE /admin/portfolios error:", e)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
