@@ -7,13 +7,15 @@ if (!process.env.MONGODB_URI) {
 const uri: string = process.env.MONGODB_URI
 const options = {
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
   ssl: true,
   tls: true,
-  tlsAllowInvalidCertificates: false,
-  tlsAllowInvalidHostnames: false,
-  retryWrites: true
+  retryWrites: true,
+  retryReads: true,
+  minPoolSize: 0,
+  tlsAllowInvalidCertificates: process.env.NODE_ENV === "development"
 }
 
 let client: MongoClient | null = null
@@ -40,23 +42,26 @@ if (process.env.NODE_ENV === "development") {
 
 export async function getDb(): Promise<Db> {
   if (!clientPromise) {
-    throw new Error("MongoDB client not initialized")
+    // Reinitialize if needed
+    client = new MongoClient(uri, options)
+    clientPromise = client.connect()
   }
   
   try {
     if (!db) {
       const client = await clientPromise
       db = client.db()
-      // Test the connection
+      // Verify the connection
       await db.command({ ping: 1 })
+      console.log("Successfully connected to MongoDB")
     }
     return db
   } catch (error) {
-    console.error("Failed to connect to MongoDB:", error)
-    // Reset the connection
+    console.error("MongoDB connection error:", error)
+    // Reset everything for next attempt
     client = null
     db = null
     clientPromise = null
-    throw new Error("Failed to connect to database")
+    throw new Error("Database connection failed")
   }
 }

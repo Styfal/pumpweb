@@ -4,8 +4,13 @@ import { getDb } from "@/lib/mongodb"
 
 export async function POST(request: NextRequest) {
   try {
-    const db = await getDb()
-    const body = await request.json()
+    const db = await getDb().catch((error) => {
+      console.error("Database connection error:", error)
+      throw new Error("Failed to connect to database")
+    })
+    const body = await request.json().catch(() => {
+      throw new Error("Invalid JSON payload")
+    })
 
     const {
       helioChargeId,

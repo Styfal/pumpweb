@@ -42,8 +42,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Await the params
-    const { portfolioId } = await params
+    let portfolioId: string
+    try {
+      portfolioId = (await params).portfolioId
+    } catch (error) {
+      return NextResponse.json({ error: "Invalid portfolio ID" }, { status: 400 })
+    }
     const body = (await request.json()) as Partial<PortfolioDoc>
 
     const db = await getDb()
