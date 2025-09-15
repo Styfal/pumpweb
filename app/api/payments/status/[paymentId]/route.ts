@@ -1,4 +1,4 @@
-// app/api/payments/[paymentId]/route.ts
+// app/api/payments/status/[paymentId]/route.ts
 import { type NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
@@ -32,10 +32,11 @@ type PaymentQuery = { id: string } | { _id: ObjectId }
 
 export async function GET(
   _request: NextRequest,
-  context: { params: { paymentId: string } }
+  context: { params: Promise<{ paymentId: string }> }
 ) {
   try {
-    const { paymentId } = context.params
+    // Await the params
+    const { paymentId } = await context.params
     const db = await getDb()
 
     const paymentsCol = db.collection<PaymentDoc>("payments")
