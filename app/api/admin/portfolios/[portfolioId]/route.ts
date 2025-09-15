@@ -32,7 +32,8 @@ function isAuthorized(req: Request) {
   return headerKey === expected
 }
 
-type RouteContext = { params: { portfolioId: string } }
+// Updated RouteContext with Promise<params>
+type RouteContext = { params: Promise<{ portfolioId: string }> }
 
 // PATCH /api/portfolios/[portfolioId]
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -41,7 +42,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params
+    // Await the params
+    const { portfolioId } = await params
     const body = (await request.json()) as Partial<PortfolioDoc>
 
     const db = await getDb()
@@ -75,7 +77,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { portfolioId } = params
+    // Await the params
+    const { portfolioId } = await params
     const db = await getDb()
     const portfolios = db.collection<PortfolioDoc>("portfolios")
 
