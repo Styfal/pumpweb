@@ -6,7 +6,7 @@ import type { WithId, ObjectId } from "mongodb"
 import type { Portfolio, Template } from "@/lib/types" // <-- use your app's types
 
 interface PortfolioPageProps {
-  params: { username: string }
+  params: Promise<{ username: string }>
 }
 
 // --- Mongo docs as stored ---
@@ -57,7 +57,8 @@ function mapPortfolio(doc: WithId<PortfolioDoc>): Portfolio {
 }
 
 export default async function PortfolioPage({ params }: PortfolioPageProps) {
-  const { username } = params
+  // Await the params
+  const { username } = await params
   const db = await getDb()
 
   // Find published portfolio and its template
