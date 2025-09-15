@@ -32,10 +32,10 @@ type PaymentQuery = { id: string } | { _id: ObjectId }
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { paymentId: string } }
+  context: { params: { paymentId: string } }
 ) {
   try {
-    const { paymentId } = params
+    const { paymentId } = context.params
     const db = await getDb()
 
     const paymentsCol = db.collection<PaymentDoc>("payments")
