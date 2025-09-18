@@ -1,61 +1,69 @@
 // app/admin/page.tsx
-import { redirect } from "next/navigation"
-import { AdminDashboard } from "@/components/admin-dashboard"
-import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+import { unstable_noStore as noStore } from "next/cache";
+import { redirect } from "next/navigation";
+import { AdminDashboard } from "@/components/admin-dashboard";
+import { getDb } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 // ------- DB document shapes (adjust if your schema differs) -------
 type PortfolioDoc = {
-  _id: ObjectId
-  id?: string
-  username: string
-  token_name?: string
-  ticker?: string
-  slogan?: string
-  logo_url?: string
-  template?: string
-  description?: string
-  is_published?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-}
+  _id: ObjectId;
+  id?: string;
+  username: string;
+  token_name?: string;
+  ticker?: string;
+  slogan?: string;
+  logo_url?: string;
+  template?: string;
+  description?: string;
+  is_published?: boolean;
+  created_at?: Date | string;
+  updated_at?: Date | string;
+};
 
 type PaymentDoc = {
-  _id: ObjectId
-  id?: string
-  status: string
-  amount: number
-  currency: string
-  verified_at?: Date | string | null
-  created_at?: Date | string
-  portfolio_username?: string
-  portfolio_id?: string
-}
+  _id: ObjectId;
+  id?: string;
+  status: string;
+  amount: number;
+  currency: string;
+  verified_at?: Date | string | null;
+  created_at?: Date | string;
+  portfolio_username?: string;
+  portfolio_id?: string;
+};
 
 type TemplateDoc = {
-  _id: ObjectId
-  name: string
-  display_name?: string
-  html_template?: string
-  css_template?: string
-  is_active?: boolean
-  created_at?: Date | string
-  updated_at?: Date | string
-}
+  _id: ObjectId;
+  name: string;
+  display_name?: string;
+  html_template?: string;
+  css_template?: string;
+  is_active?: boolean;
+  created_at?: Date | string;
+  updated_at?: Date | string;
+};
 
 // ------- Helpers -------
 function toISOStrict(d?: Date | string | null): string {
-  if (!d) return new Date().toISOString()
-  return typeof d === "string" ? new Date(d).toISOString() : d.toISOString()
+  if (!d) return new Date().toISOString();
+  return typeof d === "string" ? new Date(d).toISOString() : d.toISOString();
 }
 
 export default async function AdminPage() {
-  const adminKey = process.env.ADMIN_ACCESS_KEY
+  noStore(); // ensure nothing is cached/prerendered
+
+  const adminKey = process.env.ADMIN_ACCESS_KEY;
   if (!adminKey) {
-    redirect("/")
+    redirect("/");
   }
 
-  const db = await getDb()
+  const db = await getDb();
 
   // -------- Portfolios --------
   const portfoliosDocs = await db
@@ -78,7 +86,7 @@ export default async function AdminPage() {
       }
     )
     .sort({ created_at: -1 })
-    .toArray()
+    .toArray();
 
   const portfolios = portfoliosDocs.map((p) => ({
     id: p.id ?? p._id.toString(),
@@ -92,7 +100,7 @@ export default async function AdminPage() {
     is_published: !!p.is_published,
     created_at: toISOStrict(p.created_at),
     updated_at: toISOStrict(p.updated_at ?? p.created_at),
-  }))
+  }));
 
   // -------- Payments (+ minimal related portfolio info) --------
   const paymentsDocs = await db
@@ -113,17 +121,17 @@ export default async function AdminPage() {
       }
     )
     .sort({ created_at: -1 })
-    .toArray()
+    .toArray();
 
   const usernames = Array.from(
     new Set(paymentsDocs.map((p) => p.portfolio_username).filter(Boolean) as string[])
-  )
+  );
   const portfolioIdStrings = Array.from(
     new Set(paymentsDocs.map((p) => p.portfolio_id).filter(Boolean) as string[])
-  )
+  );
   const portfolioObjectIds = portfolioIdStrings
     .filter((s) => ObjectId.isValid(s))
-    .map((s) => new ObjectId(s))
+    .map((s) => new ObjectId(s));
 
   const [byUsername, byId] = await Promise.all([
     usernames.length
@@ -144,20 +152,20 @@ export default async function AdminPage() {
           )
           .toArray()
       : Promise.resolve([] as PortfolioDoc[]),
-  ])
+  ]);
 
-  const usernameMap = new Map(byUsername.map((p) => [p.username, p]))
-  const idMap = new Map(byId.map((p) => [p._id.toString(), p]))
+  const usernameMap = new Map(byUsername.map((p) => [p.username, p]));
+  const idMap = new Map(byId.map((p) => [p._id.toString(), p]));
 
   const payments = paymentsDocs.map((pay) => {
     const related =
       (pay.portfolio_username && usernameMap.get(pay.portfolio_username)) ||
       (pay.portfolio_id && idMap.get(pay.portfolio_id)) ||
-      undefined
+      undefined;
 
     const validStatus = ["pending", "completed", "failed"].includes(pay.status)
       ? (pay.status as "pending" | "completed" | "failed")
-      : "pending"
+      : "pending";
 
     return {
       id: pay.id ?? pay._id.toString(),
@@ -173,8 +181,8 @@ export default async function AdminPage() {
             token_name: related.token_name ?? "",
           }
         : undefined,
-    }
-  })
+    };
+  });
 
   // -------- Templates --------
   const templatesDocs = await db
@@ -194,7 +202,7 @@ export default async function AdminPage() {
       }
     )
     .sort({ created_at: -1 })
-    .toArray()
+    .toArray();
 
   const templates = templatesDocs.map((t) => ({
     id: t._id.toString(),
@@ -205,11 +213,11 @@ export default async function AdminPage() {
     is_active: !!t.is_active,
     created_at: toISOStrict(t.created_at),
     updated_at: toISOStrict(t.updated_at ?? t.created_at),
-  }))
+  }));
 
   return (
     <div className="container mx-auto py-8">
       <AdminDashboard portfolios={portfolios} payments={payments} templates={templates} />
     </div>
-  )
+  );
 }
