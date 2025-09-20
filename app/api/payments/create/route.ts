@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { type NextRequest, NextResponse } from "next/server"

@@ -15,15 +15,25 @@ interface PaymentPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("POST /api/create-payment - Starting request");
+
     // 1) Parse JSON safely
-    const body: Partial<PaymentPayload> = await request.json().catch(() => {
+    const body: Partial<PaymentPayload> = await request.json().catch((err) => {
+      console.error("JSON parse error:", err);
       throw new Error("Invalid JSON payload");
     });
+
+    console.log("Request body:", body);
 
     const { helioChargeId, portfolioId, username, amount, currency } = body;
 
     // 2) Basic validation
     if (!helioChargeId || !portfolioId || !username) {
+      console.error("Missing required fields:", {
+        helioChargeId,
+        portfolioId,
+        username,
+      });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -31,7 +41,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 3) Connect to DB at request-time (not build-time)
+    console.log("Connecting to database...");
     const db = await getDb();
+    console.log("Database connected successfully");
 
     const paymentDoc = {
       hel_payment_id: helioChargeId,
@@ -43,11 +55,14 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
     };
 
-    await db.collection("payments").insertOne(paymentDoc);
+    console.log("Inserting payment document:", paymentDoc);
+    const result = await db.collection("payments").insertOne(paymentDoc);
+    console.log("Payment inserted with ID:", result.insertedId);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, paymentId: result.insertedId });
   } catch (error) {
     console.error("Error saving pending payment:", error);
+    console.error("Error stack:", (error as Error)?.stack);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
