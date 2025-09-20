@@ -37,19 +37,20 @@ let client: MongoClient | null = null;
 let db: Db | null = null;
 
 export async function getDb(): Promise<Db> {
-  if (db) return db;
-
   try {
     if (!client) {
+      console.log("Creating new MongoDB client...");
       client = new MongoClient(uri as string, clientOptions);
       await client.connect();
+      console.log("MongoDB client connected successfully");
+      db = client.db(); // Uses default DB from URI
     }
-    db = client.db();
-    // lightweight connectivity check
-    await db.command({ ping: 1 });
+    if (!db) {
+      throw new Error("Failed to get database instance");
+    }
     return db;
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
     // reset so next request can retry a fresh client
     try {
       await client?.close();

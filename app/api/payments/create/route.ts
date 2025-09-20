@@ -25,13 +25,21 @@ interface CreatePaymentRequest {
 // Helper to safely get env variables
 function requireEnv(key: string): string {
   const value = process.env[key]
-  if (typeof value !== "string" || !value.trim()) throw new Error(`Missing required env variable: ${key}`)
+  if (typeof value !== "string" || !value.trim()) {
+    console.error(`Missing required env variable: ${key}`)
+    throw new Error(`Missing required env variable: ${key}`)
+  }
   return value.trim()
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Add more detailed logging
+    console.log("POST /api/payments/create - Starting request")
+    
     const body: CreatePaymentRequest = await request.json()
+    console.log("Request body received:", { ...body, portfolioData: { ...body.portfolioData } })
+    
     const { portfolioData, amount, currency = "USD" } = body
 
     // Validate required fields
@@ -42,26 +50,32 @@ export async function POST(request: NextRequest) {
       typeof amount !== "number" ||
       amount <= 0
     ) {
+      console.error("Validation failed:", { portfolioData, amount })
       return NextResponse.json({ error: "Missing or invalid required fields" }, { status: 400 })
     }
 
     // Validate username format
     if (!validateUsername(portfolioData.username)) {
+      console.error("Username validation failed:", portfolioData.username)
       return NextResponse.json(
         { error: "Username must be 3-30 characters, alphanumeric and hyphens only" },
         { status: 400 }
       )
     }
 
+    console.log("Connecting to database...")
     const db = await getDb()
+    console.log("Database connected successfully")
 
     // Check if username is already taken
     const existingPortfolio = await db.collection("portfolios").findOne({ username: portfolioData.username })
     if (existingPortfolio) {
+      console.error("Username already taken:", portfolioData.username)
       return NextResponse.json({ error: "Username already taken" }, { status: 409 })
     }
 
     // Create portfolio record (unpublished)
+    console.log("Creating portfolio...")
     const portfolioInsert = await db.collection("portfolios").insertOne({
       ...portfolioData,
       is_published: false,
@@ -94,29 +108,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch created payment" }, { status: 500 })
     }
 
-    // Generate Helio payment URL
-    const helioPaylinkId = requireEnv("HELIO_PAYLINK_ID")
-    const helioPaymentUrl = `https://app.hel.io/pay/${helioPaylinkId}`
+    // Check environment variables early
+    console.log("Checking environment variables...")
+    try {
+      const helioPaylinkId = requireEnv("HELIO_PAYLINK_ID")
+      const helioPaymentUrl = `https://app.hel.io/pay/${helioPaylinkId}`
 
-    await db.collection("payments").updateOne(
-      { _id: payment._id },
-      { $set: { payment_url: helioPaymentUrl } }
-    )
+      await db.collection("payments").updateOne(
+        { _id: payment._id },
+        { $set: { payment_url: helioPaymentUrl } }
+      )
 
-    return NextResponse.json({
-      success: true,
-      payment: {
-        id: payment._id.toString(),
-        portfolio_id: portfolio._id.toString(),
-        username: portfolio.username,
-        payment_url: helioPaymentUrl,
-        amount,
-        currency,
-        status: "pending",
-      },
-    })
+      console.log("Payment created successfully")
+      return NextResponse.json({
+        success: true,
+        payment: {
+          id: payment._id.toString(),
+          portfolio_id: portfolio._id.toString(),
+          username: portfolio.username,
+          payment_url: helioPaymentUrl,
+          amount,
+          currency,
+          status: "pending",
+        },
+      })
+    } catch (envError) {
+      console.error("Environment variable error:", envError)
+      // Clean up created records
+      await db.collection("payments").deleteOne({ _id: payment._id })
+      await db.collection("portfolios").deleteOne({ _id: portfolio._id })
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
+    }
   } catch (error) {
     console.error("[v0] Payment creation error:", error)
+    console.error("Error stack:", (error as Error)?.stack)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
