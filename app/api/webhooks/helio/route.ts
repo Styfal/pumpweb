@@ -9,7 +9,7 @@ import { getDb } from "@/lib/mongodb";
 function isAuthorized(req: NextRequest): boolean {
   const bearer = req.headers.get("authorization");
   const xHelio = req.headers.get("x-helio-token");
-  const secret = process.env.HELIO_WEBHOOK_SECRET || process.env.HELIO_SHARED_TOKEN; // support either env
+  const secret = process.env.HELIO_WEBHOOK_SECRET;
 
   if (!secret) {
     console.error("[webhook] Missing HELIO_WEBHOOK_SECRET or HELIO_SHARED_TOKEN env");
