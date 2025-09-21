@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 // app/api/helio-webhook/route.ts
 import { type NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"

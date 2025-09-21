@@ -1,4 +1,9 @@
 // app/portfolio/[username]/page.tsx
+
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+
 import { notFound } from "next/navigation"
 import { getDb } from "@/lib/mongodb"
 import { PortfolioRenderer } from "@/components/portfolio-renderer"

@@ -1,7 +1,12 @@
 // app/api/portfolio/[username]/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse, type NextRequest } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+
+
 
 interface TemplateDoc {
   _id?: ObjectId

@@ -1,7 +1,12 @@
 // app/api/payments/status/[paymentId]/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { type NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+
+
 
 function toISO(d?: Date | string | null) {
   if (!d) return null

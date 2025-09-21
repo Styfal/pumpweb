@@ -1,9 +1,12 @@
+
 // app/api/create-payment/route.ts
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { type NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+
 
 interface PaymentPayload {
   helioChargeId: string;
