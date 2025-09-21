@@ -5,61 +5,129 @@ import { type NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 
-// Accept both ways Helio may auth: Authorization: Bearer <token> OR x-helio-token: <token>
-function isAuthorized(req: NextRequest): boolean {
-  const bearer = req.headers.get("authorization");
-  const xHelio = req.headers.get("x-helio-token");
-  const secret = process.env.HELIO_WEBHOOK_SECRET;
+// ───────────────────────────────────────────────────────────────────────────────
+// Types for Helio webhook payloads
+// Helio sometimes sends one of two shapes. We support both.
+// ───────────────────────────────────────────────────────────────────────────────
+type HelioTxMeta = {
+  transactionStatus?: string;
+};
 
+type HelioTxObject = {
+  id: string;
+  paylinkId?: string;
+  meta?: HelioTxMeta;
+};
+
+type HelioShapeA = {
+  event?: string;
+  transactionObject?: HelioTxObject;
+};
+
+type HelioShapeB = {
+  id: string;
+  paylink?: string;
+  paylinkId?: string;
+  meta?: HelioTxMeta;
+};
+
+type HelioIncoming = HelioShapeA | HelioShapeB;
+
+type ParsedHelio = {
+  helioTxId: string;
+  paylinkId: string;
+  txStatus: string; // already uppercased
+};
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Auth helper: Authorization: Bearer <HELIO_WEBHOOK_SECRET>
+// Optionally also accept x-helio-token if you want.
+// ───────────────────────────────────────────────────────────────────────────────
+function isAuthorized(req: NextRequest): boolean {
+  const secret = process.env.HELIO_WEBHOOK_SECRET;
   if (!secret) {
-    console.error("[webhook] Missing HELIO_WEBHOOK_SECRET or HELIO_SHARED_TOKEN env");
+    console.error("[webhook] Missing HELIO_WEBHOOK_SECRET env");
     return false;
   }
 
+  const bearer = req.headers.get("authorization");
   if (bearer?.startsWith("Bearer ")) {
-    return bearer.substring(7).trim() === secret;
+    return bearer.slice("Bearer ".length).trim() === secret;
   }
+
+  // Optional fallback if you also configured x-helio-token in Helio
+  const xHelio = req.headers.get("x-helio-token");
   if (xHelio?.trim()) {
     return xHelio.trim() === secret;
   }
+
   return false;
 }
 
-// Extract a normalized object from the two payload shapes we've seen
-function parseHelioPayload(body: any) {
-  // Shape A (from your earlier log):
-  // { event: 'CREATED' | '...', transactionObject: { id, paylinkId, meta: { transactionStatus } }, ... }
-  if (body?.transactionObject?.id && body?.transactionObject?.paylinkId) {
+// ───────────────────────────────────────────────────────────────────────────────
+// Type guards / parser
+// ───────────────────────────────────────────────────────────────────────────────
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function parseHelioPayload(body: unknown): ParsedHelio | null {
+  if (!isRecord(body)) return null;
+
+  // Shape A: { transactionObject: { id, paylinkId, meta: { transactionStatus } } }
+  const maybeTxObj = isRecord(body.transactionObject) ? body.transactionObject : null;
+  const aId = typeof maybeTxObj?.id === "string" ? maybeTxObj.id : undefined;
+  const aPaylinkId =
+    typeof maybeTxObj?.paylinkId === "string" ? maybeTxObj.paylinkId : undefined;
+  const aStatusRaw =
+    isRecord(maybeTxObj?.meta) && typeof maybeTxObj?.meta?.transactionStatus === "string"
+      ? maybeTxObj.meta.transactionStatus
+      : undefined;
+
+  if (aId && aPaylinkId) {
     return {
-      helioTxId: String(body.transactionObject.id),
-      paylinkId: String(body.transactionObject.paylinkId),
-      txStatus: String(body.transactionObject?.meta?.transactionStatus || "").toUpperCase(),
-      raw: body,
+      helioTxId: aId,
+      paylinkId: aPaylinkId,
+      txStatus: (aStatusRaw || "").toUpperCase(),
     };
   }
 
-  // Shape B (your original TS interface-like):
-  // { id, paylink, meta: { transactionStatus }, ... }
-  if (body?.id && (body?.paylink || body?.paylinkId)) {
+  // Shape B: { id, paylink?/paylinkId?, meta: { transactionStatus } }
+  const bId = typeof body.id === "string" ? body.id : undefined;
+  const bPaylink =
+    typeof body.paylinkId === "string"
+      ? (body.paylinkId as string)
+      : typeof body.paylink === "string"
+      ? (body.paylink as string)
+      : undefined;
+  const bStatusRaw =
+    isRecord(body.meta) && typeof body.meta?.transactionStatus === "string"
+      ? (body.meta.transactionStatus as string)
+      : undefined;
+
+  if (bId && bPaylink) {
     return {
-      helioTxId: String(body.id),
-      paylinkId: String(body.paylinkId || body.paylink),
-      txStatus: String(body?.meta?.transactionStatus || "").toUpperCase(),
-      raw: body,
+      helioTxId: bId,
+      paylinkId: bPaylink,
+      txStatus: (bStatusRaw || "").toUpperCase(),
     };
   }
 
   return null;
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
+// Handler
+// ───────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     if (!isAuthorized(req)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = (await req.json()) as HelioIncoming;
     const parsed = parseHelioPayload(body);
+
     if (!parsed) {
       console.error("[webhook] Invalid Helio payload shape:", body);
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -70,18 +138,17 @@ export async function POST(req: NextRequest) {
 
     const db = await getDb();
 
-    // Find payment by the PAYLINK ID we stored during creation
+    // Find the payment created by /api/payments/create using stored helio_paylink_id
     const payment = await db.collection("payments").findOne({ helio_paylink_id: paylinkId });
     if (!payment) {
       console.error("[webhook] Payment not found for paylinkId:", paylinkId);
-      // Return 200 so Helio doesn't hammer retries forever; we logged it server-side.
-      return NextResponse.json({ ok: false, reason: "Payment not found" });
+      // 200 to avoid endless retries; you can manually replay from Helio later
+      return NextResponse.json({ ok: false, reason: "payment_not_found" });
     }
 
-    // Map status
-    let newStatus: "pending" | "completed" | "failed" = "pending";
-    if (txStatus === "SUCCESS") newStatus = "completed";
-    else if (txStatus === "FAILED") newStatus = "failed";
+    // Map Helio status → our status
+    const newStatus: "pending" | "completed" | "failed" =
+      txStatus === "SUCCESS" ? "completed" : txStatus === "FAILED" ? "failed" : "pending";
 
     await db.collection("payments").updateOne(
       { _id: new ObjectId(payment._id) },
@@ -97,7 +164,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, status: newStatus });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[webhook] Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
