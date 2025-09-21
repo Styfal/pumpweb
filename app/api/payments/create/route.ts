@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     const db = await getDb();
     console.log("Database connected successfully");
 
-    // Check if username is already taken
+    // Ensure unique username
     const existingPortfolio = await db
       .collection("portfolios")
       .findOne({ username: portfolioData.username });
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create portfolio record (unpublished)
+    // Create portfolio (unpublished)
     console.log("Creating portfolio...");
     const portfolioInsert = await db.collection("portfolios").insertOne({
       ...portfolioData,
@@ -116,16 +116,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create payment record
+    // Helio paylink + payment doc
     const helioPaylinkId = requireEnv("HELIO_PAYLINK_ID");
     const helioPaymentUrl = `https://app.hel.io/pay/${helioPaylinkId}`;
 
     const paymentInsert = await db.collection("payments").insertOne({
-      portfolio_id: portfolio._id,
+      portfolio_id: portfolio._id as ObjectId,
       amount,
       currency,
       status: "pending",
-      helio_paylink_id: helioPaylinkId, // <-- store Helio paylinkId for webhook matching
+      helio_paylink_id: helioPaylinkId, // <-- used by webhook to match
       created_at: new Date(),
     });
 
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[v0] Payment creation error:", error);
+    console.error("[payments/create] POST error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

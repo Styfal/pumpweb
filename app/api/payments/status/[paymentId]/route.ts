@@ -1,124 +1,101 @@
-// app/api/payments/status/[paymentId]/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { type NextRequest, NextResponse } from "next/server"
-import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
+import { type NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
-
-
-function toISO(d?: Date | string | null) {
-  if (!d) return null
-  return typeof d === "string" ? new Date(d).toISOString() : d.toISOString()
-}
-
-// ---- Typed Mongo schemas ----
 type PaymentDoc = {
-  _id: ObjectId
-  id?: string
-  status: string
-  amount: number
-  currency: string
-  verified_at?: Date | string | null
-  portfolio_username?: string
-  portfolio_id?: string
-}
+  _id: ObjectId;
+  status: "pending" | "completed" | "failed" | string;
+  amount: number;
+  currency: string;
+  portfolio_id: ObjectId;
+  helio_paylink_id?: string;
+  helio_tx_id?: string;
+  verified_at?: Date | null;
+  created_at?: Date;
+  updated_at?: Date;
+};
 
 type PortfolioDoc = {
-  _id: ObjectId
-  username: string
-  token_name?: string
-  is_published?: boolean
-}
-
-// ---- Union for the $or query ----
-type PaymentQuery = { id: string } | { _id: ObjectId }
+  _id: ObjectId;
+  username: string;
+  token_name?: string;
+  is_published?: boolean;
+  created_at?: Date;
+  published_at?: Date;
+};
 
 export async function GET(
-  _request: NextRequest,
-  context: { params: Promise<{ paymentId: string }> }
+  _req: NextRequest,
+  { params }: { params: { paymentId: string } }
 ) {
   try {
-    // Await the params
-    const { paymentId } = await context.params
-    const db = await getDb()
+    const { paymentId } = params;
 
-    const paymentsCol = db.collection<PaymentDoc>("payments")
-    const portfoliosCol = db.collection<PortfolioDoc>("portfolios")
-
-    // Match either custom string id or Mongo _id
-    const or: PaymentQuery[] = [{ id: paymentId }]
-    if (ObjectId.isValid(paymentId)) {
-      or.push({ _id: new ObjectId(paymentId) })
+    if (!ObjectId.isValid(paymentId)) {
+      return NextResponse.json({ error: "Invalid payment id" }, { status: 400 });
     }
 
+    const db = await getDb();
+    const paymentsCol = db.collection<PaymentDoc>("payments");
+    const portfoliosCol = db.collection<PortfolioDoc>("portfolios");
+
     const payment = await paymentsCol.findOne(
-      { $or: or },
+      { _id: new ObjectId(paymentId) },
       {
         projection: {
-          id: 1,
           status: 1,
           amount: 1,
           currency: 1,
-          verified_at: 1,
-          portfolio_username: 1,
           portfolio_id: 1,
+          helio_paylink_id: 1,
+          helio_tx_id: 1,
+          verified_at: 1,
+          updated_at: 1,
+          created_at: 1,
         },
       }
-    )
+    );
 
     if (!payment) {
-      return NextResponse.json({ error: "Payment not found" }, { status: 404 })
+      return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
 
-    // Narrowed type for the response shape
-    let portfolio:
-      | { username: string; token_name?: string; is_published?: boolean; url: string | null }
-      | null = null
+    const portfolio = await portfoliosCol.findOne(
+      { _id: payment.portfolio_id },
+      { projection: { username: 1, token_name: 1, is_published: 1 } }
+    );
 
-    if (payment.portfolio_username) {
-      // Fetch by username
-      const p = await portfoliosCol.findOne(
-        { username: payment.portfolio_username },
-        { projection: { username: 1, token_name: 1, is_published: 1 } }
-      )
-      if (p) {
-        portfolio = {
-          username: p.username,
-          token_name: p.token_name,
-          is_published: p.is_published,
-          url: p.is_published ? `/portfolio/${p.username}` : null,
-        }
-      }
-    } else if (payment.portfolio_id && ObjectId.isValid(payment.portfolio_id)) {
-      // Or by ObjectId
-      const p = await portfoliosCol.findOne(
-        { _id: new ObjectId(payment.portfolio_id) },
-        { projection: { username: 1, token_name: 1, is_published: 1 } }
-      )
-      if (p) {
-        portfolio = {
-          username: p.username,
-          token_name: p.token_name,
-          is_published: p.is_published,
-          url: p.is_published ? `/portfolio/${p.username}` : null,
-        }
-      }
-    }
+    // Build a redirect URL only when published
+    const portfolioUrl =
+      portfolio && portfolio.is_published
+        ? `/portfolio/${portfolio.username}`
+        : null;
 
     return NextResponse.json({
       payment: {
-        id: payment.id ?? payment._id.toString(),
+        id: payment._id.toString(),
         status: payment.status,
         amount: payment.amount,
         currency: payment.currency,
-        verified_at: toISO(payment.verified_at ?? null),
-        portfolio,
+        helio_tx_id: payment.helio_tx_id ?? null,
+        verified_at: payment.verified_at ? new Date(payment.verified_at).toISOString() : null,
+        updated_at: payment.updated_at ? new Date(payment.updated_at).toISOString() : null,
+        created_at: payment.created_at ? new Date(payment.created_at).toISOString() : null,
       },
-    })
+      portfolio: portfolio
+        ? {
+            username: portfolio.username,
+            token_name: portfolio.token_name ?? null,
+            is_published: !!portfolio.is_published,
+            url: portfolioUrl,
+          }
+        : null,
+    });
   } catch (error) {
-    console.error("[payments] Payment status error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[payments/status] GET error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
