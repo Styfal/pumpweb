@@ -1,7 +1,8 @@
+// app/api/payments/status/[paymentId]/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
@@ -28,7 +29,7 @@ type PortfolioDoc = {
 };
 
 export async function GET(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: { paymentId: string } }
 ) {
   try {
@@ -68,11 +69,8 @@ export async function GET(
       { projection: { username: 1, token_name: 1, is_published: 1 } }
     );
 
-    // Build a redirect URL only when published
     const portfolioUrl =
-      portfolio && portfolio.is_published
-        ? `/portfolio/${portfolio.username}`
-        : null;
+      portfolio && portfolio.is_published ? `/portfolio/${portfolio.username}` : null;
 
     return NextResponse.json({
       payment: {
