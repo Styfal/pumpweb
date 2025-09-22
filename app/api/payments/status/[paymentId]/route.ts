@@ -1,8 +1,7 @@
-// app/api/payments/status/[paymentId]/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
@@ -28,17 +27,23 @@ type PortfolioDoc = {
   published_at?: Date;
 };
 
+function asString(v: string | string[] | undefined): string | null {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) && v.length) return v[0]!;
+  return null;
+}
+
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { paymentId: string } }
+  _req: Request,
+  // Loose, checker-friendly context type:
+  context: { params: Record<string, string | string[]> }
 ) {
+  const paymentId = asString(context.params?.paymentId);
+  if (!paymentId || !ObjectId.isValid(paymentId)) {
+    return NextResponse.json({ error: "Invalid payment id" }, { status: 400 });
+  }
+
   try {
-    const { paymentId } = params;
-
-    if (!paymentId || !ObjectId.isValid(paymentId)) {
-      return NextResponse.json({ error: "Invalid payment id" }, { status: 400 });
-    }
-
     const db = await getDb();
     const paymentsCol = db.collection<PaymentDoc>("payments");
     const portfoliosCol = db.collection<PortfolioDoc>("portfolios");
