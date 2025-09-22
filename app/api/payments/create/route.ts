@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
-// (If you don't have this util, remove it or inline your own username check)
+// (If you don't have this util, remove or inline your own username validator)
 import { validateUsername } from "@/lib/portfolio-utils";
 
 type CreatePaymentRequest = {
@@ -23,8 +23,15 @@ type CreatePaymentRequest = {
     telegram_url?: string;
     website_url?: string;
   };
-  amount: number;   // your app decides units (e.g., USD, JPY, minimal units, etc.)
-  currency?: string; // e.g., "USD" | "JPY" | "SOL"
+  amount: number;
+  currency?: string;
+};
+
+type HelioChargeResponse = {
+  checkoutUrl?: string;
+  url?: string;
+  id?: string;
+  [key: string]: unknown; // fallback for any other fields
 };
 
 function envOrThrow(k: string) {
@@ -35,8 +42,8 @@ function envOrThrow(k: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as CreatePaymentRequest;
-    const { portfolioData, amount, currency = "USD" } = body || ({} as any);
+    const body: CreatePaymentRequest = await req.json();
+    const { portfolioData, amount, currency = "USD" } = body;
 
     if (!portfolioData || !portfolioData.username || !portfolioData.token_name) {
       return NextResponse.json({ error: "Missing portfolioData.username/token_name" }, { status: 400 });
@@ -74,15 +81,14 @@ export async function POST(req: NextRequest) {
       amount,
       currency,
       status: "pending",
-      helio_paylink_id: helioPaylinkId, // fallback matcher
+      helio_paylink_id: helioPaylinkId,
       created_at: new Date(),
     });
     const paymentId = paymentRes.insertedId as ObjectId;
 
-    // 3) Create a Helio charge with additionalJSON (=> echoed back in webhook)
+    // 3) Create a Helio charge with additionalJSON
     const HELIO_API_KEY = envOrThrow("HELIO_API_KEY");
 
-    // NOTE: If your Helio endpoint differs, change this URL accordingly.
     const helioResp = await fetch("https://api.hel.io/v1/paylink/charges", {
       method: "POST",
       headers: {
@@ -93,11 +99,6 @@ export async function POST(req: NextRequest) {
         paylinkId: helioPaylinkId,
         amount,
         currency,
-        // Optional: these may be supported depending on your Paylink config.
-        // successUrl: `${envOrThrow("APP_ORIGIN")}/checkout/success?paymentId=${paymentId}`,
-        // cancelUrl: `${envOrThrow("APP_ORIGIN")}/checkout/cancel?paymentId=${paymentId}`,
-
-        // 👇 This is the key part; Helio will echo this in the webhook.
         additionalJSON: {
           paymentId: String(paymentId),
           portfolioId: String(portfolioId),
@@ -117,10 +118,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const charge = await helioResp.json().catch(() => ({} as any));
+    const charge: HelioChargeResponse = await helioResp.json().catch(() => ({}));
+
     const payment_url =
-      charge?.checkoutUrl ||
-      charge?.url ||
+      charge.checkoutUrl ||
+      charge.url ||
       `https://app.hel.io/pay/${helioPaylinkId}`;
 
     // 4) Respond to client
