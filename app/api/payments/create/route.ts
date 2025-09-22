@@ -1,12 +1,14 @@
+// app/api/payments/create/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
+// (If you don't have this util, remove it or inline your own username check)
 import { validateUsername } from "@/lib/portfolio-utils";
 
-interface CreatePaymentRequest {
+type CreatePaymentRequest = {
   portfolioData: {
     username: string;
     token_name: string;
@@ -21,155 +23,121 @@ interface CreatePaymentRequest {
     telegram_url?: string;
     website_url?: string;
   };
-  amount: number;
-  currency?: string;
+  amount: number;   // your app decides units (e.g., USD, JPY, minimal units, etc.)
+  currency?: string; // e.g., "USD" | "JPY" | "SOL"
+};
+
+function envOrThrow(k: string) {
+  const v = process.env[k];
+  if (!v) throw new Error(`Missing env ${k}`);
+  return v;
 }
 
-// Helper to safely get env variables
-function requireEnv(key: string): string {
-  const value = process.env[key];
-  if (typeof value !== "string" || !value.trim()) {
-    console.error(`Missing required env variable: ${key}`);
-    throw new Error(`Missing required env variable: ${key}`);
-  }
-  return value.trim();
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    console.log("POST /api/payments/create - Starting request");
+    const body = (await req.json()) as CreatePaymentRequest;
+    const { portfolioData, amount, currency = "USD" } = body || ({} as any);
 
-    const body: CreatePaymentRequest = await request.json();
-    console.log("Request body received:", {
-      ...body,
-      portfolioData: { ...body.portfolioData },
-    });
-
-    const { portfolioData, amount, currency = "USD" } = body;
-
-    // Validate required fields
-    if (
-      !portfolioData ||
-      !portfolioData.username ||
-      !portfolioData.token_name ||
-      typeof amount !== "number" ||
-      amount <= 0
-    ) {
-      console.error("Validation failed:", { portfolioData, amount });
+    if (!portfolioData || !portfolioData.username || !portfolioData.token_name) {
+      return NextResponse.json({ error: "Missing portfolioData.username/token_name" }, { status: 400 });
+    }
+    if (typeof amount !== "number" || !(amount > 0)) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    }
+    if (validateUsername && !validateUsername(portfolioData.username)) {
       return NextResponse.json(
-        { error: "Missing or invalid required fields" },
+        { error: "Username must be 3-30 chars, alphanumeric + hyphens only" },
         { status: 400 }
       );
     }
 
-    // Validate username format
-    if (!validateUsername(portfolioData.username)) {
-      console.error("Username validation failed:", portfolioData.username);
-      return NextResponse.json(
-        {
-          error:
-            "Username must be 3-30 characters, alphanumeric and hyphens only",
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log("Connecting to database...");
     const db = await getDb();
-    console.log("Database connected successfully");
 
     // Ensure unique username
-    const existingPortfolio = await db
-      .collection("portfolios")
-      .findOne({ username: portfolioData.username });
-    if (existingPortfolio) {
-      console.error("Username already taken:", portfolioData.username);
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 409 }
-      );
+    const existing = await db.collection("portfolios").findOne({ username: portfolioData.username });
+    if (existing) {
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
     }
 
-    // Create portfolio (unpublished)
-    console.log("Creating portfolio...");
-    const portfolioInsert = await db.collection("portfolios").insertOne({
+    // 1) Create portfolio (unpublished)
+    const portfolioRes = await db.collection("portfolios").insertOne({
       ...portfolioData,
       is_published: false,
       created_at: new Date(),
     });
+    const portfolioId = portfolioRes.insertedId as ObjectId;
 
-    if (!portfolioInsert.insertedId) {
-      return NextResponse.json(
-        { error: "Failed to create portfolio" },
-        { status: 500 }
-      );
-    }
-
-    const portfolio = await db
-      .collection("portfolios")
-      .findOne({ _id: portfolioInsert.insertedId });
-
-    if (!portfolio) {
-      return NextResponse.json(
-        { error: "Failed to fetch created portfolio" },
-        { status: 500 }
-      );
-    }
-
-    // Helio paylink + payment doc
-    const helioPaylinkId = requireEnv("HELIO_PAYLINK_ID");
-    const helioPaymentUrl = `https://app.hel.io/pay/${helioPaylinkId}`;
-
-    const paymentInsert = await db.collection("payments").insertOne({
-      portfolio_id: portfolio._id as ObjectId,
+    // 2) Create payment doc (pending)
+    const helioPaylinkId = envOrThrow("HELIO_PAYLINK_ID");
+    const paymentRes = await db.collection("payments").insertOne({
+      portfolio_id: portfolioId,
       amount,
       currency,
       status: "pending",
-      helio_paylink_id: helioPaylinkId, // <-- used by webhook to match
+      helio_paylink_id: helioPaylinkId, // fallback matcher
       created_at: new Date(),
     });
+    const paymentId = paymentRes.insertedId as ObjectId;
 
-    if (!paymentInsert.insertedId) {
-      await db.collection("portfolios").deleteOne({ _id: portfolio._id });
+    // 3) Create a Helio charge with additionalJSON (=> echoed back in webhook)
+    const HELIO_API_KEY = envOrThrow("HELIO_API_KEY");
+
+    // NOTE: If your Helio endpoint differs, change this URL accordingly.
+    const helioResp = await fetch("https://api.hel.io/v1/paylink/charges", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${HELIO_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        paylinkId: helioPaylinkId,
+        amount,
+        currency,
+        // Optional: these may be supported depending on your Paylink config.
+        // successUrl: `${envOrThrow("APP_ORIGIN")}/checkout/success?paymentId=${paymentId}`,
+        // cancelUrl: `${envOrThrow("APP_ORIGIN")}/checkout/cancel?paymentId=${paymentId}`,
+
+        // 👇 This is the key part; Helio will echo this in the webhook.
+        additionalJSON: {
+          paymentId: String(paymentId),
+          portfolioId: String(portfolioId),
+          username: portfolioData.username,
+        },
+      }),
+    });
+
+    if (!helioResp.ok) {
+      // rollback to avoid orphan docs
+      await db.collection("payments").deleteOne({ _id: paymentId });
+      await db.collection("portfolios").deleteOne({ _id: portfolioId });
+      const txt = await helioResp.text().catch(() => "");
       return NextResponse.json(
-        { error: "Failed to create payment" },
-        { status: 500 }
+        { error: "Failed to create Helio charge", detail: txt || helioResp.statusText },
+        { status: 502 }
       );
     }
 
-    const payment = await db
-      .collection("payments")
-      .findOne({ _id: paymentInsert.insertedId });
+    const charge = await helioResp.json().catch(() => ({} as any));
+    const payment_url =
+      charge?.checkoutUrl ||
+      charge?.url ||
+      `https://app.hel.io/pay/${helioPaylinkId}`;
 
-    if (!payment) {
-      await db.collection("portfolios").deleteOne({ _id: portfolio._id });
-      await db.collection("payments").deleteOne({
-        _id: paymentInsert.insertedId,
-      });
-      return NextResponse.json(
-        { error: "Failed to fetch created payment" },
-        { status: 500 }
-      );
-    }
-
-    console.log("Payment created successfully");
+    // 4) Respond to client
     return NextResponse.json({
       success: true,
       payment: {
-        id: payment._id.toString(),
-        portfolio_id: portfolio._id.toString(),
-        username: portfolio.username,
-        payment_url: helioPaymentUrl,
+        id: String(paymentId),
+        portfolio_id: String(portfolioId),
+        username: portfolioData.username,
+        payment_url,
         amount,
         currency,
         status: "pending",
       },
     });
-  } catch (error) {
-    console.error("[payments/create] POST error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("[payments/create] POST error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
