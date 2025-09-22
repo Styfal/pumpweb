@@ -2,7 +2,7 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
@@ -28,16 +28,9 @@ type PortfolioDoc = {
   published_at?: Date;
 };
 
-// Define the params type for the route
-type RouteParams = {
-  params: {
-    paymentId: string;
-  };
-};
-
 export async function GET(
-  req: Request,
-  { params }: RouteParams
+  _req: NextRequest,
+  { params }: { params: { paymentId: string } }
 ) {
   try {
     const { paymentId } = params;
