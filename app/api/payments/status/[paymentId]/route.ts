@@ -28,13 +28,20 @@ type PortfolioDoc = {
   published_at?: Date;
 };
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { paymentId: string } }
-) {
-  try {
-    const { paymentId } = params;
+// ✅ Make the context type compatible with Next's internal RouteContext
+type RouteContext = {
+  params?: Record<string, string | string[]>;
+};
 
+function firstString(v: string | string[] | undefined): string | null {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) && v.length) return v[0]!;
+  return null;
+}
+
+export async function GET(_req: NextRequest, context: RouteContext) {
+  try {
+    const paymentId = firstString(context.params?.paymentId);
     if (!paymentId || !ObjectId.isValid(paymentId)) {
       return NextResponse.json({ error: "Invalid payment id" }, { status: 400 });
     }
