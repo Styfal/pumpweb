@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
-// (If you don't have this util, remove or inline your own username validator)
+// Remove if you don’t have this util
 import { validateUsername } from "@/lib/portfolio-utils";
 
 type CreatePaymentRequest = {
@@ -31,7 +31,7 @@ type HelioChargeResponse = {
   checkoutUrl?: string;
   url?: string;
   id?: string;
-  [key: string]: unknown; // fallback for any other fields
+  [key: string]: unknown; // fallback for extra fields
 };
 
 function envOrThrow(k: string) {
@@ -89,29 +89,34 @@ export async function POST(req: NextRequest) {
     // 3) Create a Helio charge with additionalJSON
     const HELIO_API_KEY = envOrThrow("HELIO_API_KEY");
 
-    const helioResp = await fetch("https://api.hel.io/v1/paylink/charges", {
+    const chargeBody = {
+      paylinkId: helioPaylinkId,
+      amount: String(amount), // Helio often expects string for dynamic pricing
+      currency,
+      additionalJSON: {
+        paymentId: String(paymentId),
+        portfolioId: String(portfolioId),
+        username: portfolioData.username,
+      },
+    };
+
+    const helioResp = await fetch("https://api.hel.io/v1/charge/api-key", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${HELIO_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        paylinkId: helioPaylinkId,
-        amount,
-        currency,
-        additionalJSON: {
-          paymentId: String(paymentId),
-          portfolioId: String(portfolioId),
-          username: portfolioData.username,
-        },
-      }),
+      body: JSON.stringify(chargeBody),
     });
 
     if (!helioResp.ok) {
+      const txt = await helioResp.text().catch(() => "");
+      console.error("[helio error]", helioResp.status, txt);
+
       // rollback to avoid orphan docs
       await db.collection("payments").deleteOne({ _id: paymentId });
       await db.collection("portfolios").deleteOne({ _id: portfolioId });
-      const txt = await helioResp.text().catch(() => "");
+
       return NextResponse.json(
         { error: "Failed to create Helio charge", detail: txt || helioResp.statusText },
         { status: 502 }
