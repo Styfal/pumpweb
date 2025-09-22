@@ -28,12 +28,19 @@ type PortfolioDoc = {
   published_at?: Date;
 };
 
-export async function GET(req: Request) {
+// Define the params type for the route
+type RouteParams = {
+  params: {
+    paymentId: string;
+  };
+};
+
+export async function GET(
+  req: Request,
+  { params }: RouteParams
+) {
   try {
-    // Extract paymentId from the URL path (…/api/payments/status/[paymentId])
-    const url = new URL(req.url);
-    const segments = url.pathname.split("/").filter(Boolean);
-    const paymentId = segments[segments.length - 1];
+    const { paymentId } = params;
 
     if (!paymentId || !ObjectId.isValid(paymentId)) {
       return NextResponse.json({ error: "Invalid payment id" }, { status: 400 });

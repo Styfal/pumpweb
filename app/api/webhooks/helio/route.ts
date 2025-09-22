@@ -1,4 +1,3 @@
-// app/api/webhooks/helio/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -9,7 +8,7 @@ import { getDb } from "@/lib/mongodb";
 const DEBUG = process.env.HELIO_WEBHOOK_DEBUG === "1";
 
 // ───────────────────────────────────────────────────────────────────────────────
-// Types for Helio webhook payloads (Helio may send one of two shapes)
+// Types for Helio webhook payloads?
 // ───────────────────────────────────────────────────────────────────────────────
 type HelioTxMeta = { transactionStatus?: string };
 type HelioTxObject = { id: string; paylinkId?: string; meta?: HelioTxMeta };
@@ -24,8 +23,7 @@ type ParsedHelio = {
 };
 
 // ───────────────────────────────────────────────────────────────────────────────
-// Auth helper: Authorization: Bearer <HELIO_WEBHOOK_SECRET>
-// (Optionally accept x-helio-token as fallback.)
+// We need to authorize if helio is sending the proper token?
 // ───────────────────────────────────────────────────────────────────────────────
 function isAuthorized(req: NextRequest): { ok: boolean; reason: string } {
   const rawSecret = process.env.HELIO_WEBHOOK_SECRET ?? "";
