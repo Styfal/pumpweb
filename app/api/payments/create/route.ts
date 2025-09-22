@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
-// Remove if you don’t have this util
 import { validateUsername } from "@/lib/portfolio-utils";
 
 type CreatePaymentRequest = {
@@ -31,13 +30,13 @@ type HelioChargeResponse = {
   checkoutUrl?: string;
   url?: string;
   id?: string;
-  [key: string]: unknown; // fallback for extra fields
+  [key: string]: unknown;
 };
 
-function envOrThrow(k: string) {
-  const v = process.env[k];
-  if (!v) throw new Error(`Missing env ${k}`);
-  return v;
+function envOrThrowTrim(key: string): string {
+  const v = process.env[key];
+  if (!v) throw new Error(`Missing env ${key}`);
+  return v.trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -45,15 +44,15 @@ export async function POST(req: NextRequest) {
     const body: CreatePaymentRequest = await req.json();
     const { portfolioData, amount, currency = "USD" } = body;
 
-    if (!portfolioData || !portfolioData.username || !portfolioData.token_name) {
+    if (!portfolioData?.username || !portfolioData?.token_name) {
       return NextResponse.json({ error: "Missing portfolioData.username/token_name" }, { status: 400 });
     }
-    if (typeof amount !== "number" || !(amount > 0)) {
+    if (typeof amount !== "number" || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
-    if (validateUsername && !validateUsername(portfolioData.username)) {
+    if (typeof validateUsername === "function" && !validateUsername(portfolioData.username)) {
       return NextResponse.json(
-        { error: "Username must be 3-30 chars, alphanumeric + hyphens only" },
+        { error: "Username must be 3-30 chars, alphanumeric and hyphens only" },
         { status: 400 }
       );
     }
@@ -62,9 +61,7 @@ export async function POST(req: NextRequest) {
 
     // Ensure unique username
     const existing = await db.collection("portfolios").findOne({ username: portfolioData.username });
-    if (existing) {
-      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
-    }
+    if (existing) return NextResponse.json({ error: "Username already taken" }, { status: 409 });
 
     // 1) Create portfolio (unpublished)
     const portfolioRes = await db.collection("portfolios").insertOne({
@@ -74,36 +71,40 @@ export async function POST(req: NextRequest) {
     });
     const portfolioId = portfolioRes.insertedId as ObjectId;
 
-    // 2) Create payment doc (pending)
-    const helioPaylinkId = envOrThrow("HELIO_PAYLINK_ID");
+    // 2) Create payment (pending)
+    const HELIO_PAYLINK_ID = envOrThrowTrim("HELIO_PAYLINK_ID");
     const paymentRes = await db.collection("payments").insertOne({
       portfolio_id: portfolioId,
       amount,
       currency,
       status: "pending",
-      helio_paylink_id: helioPaylinkId,
+      helio_paylink_id: HELIO_PAYLINK_ID,
       created_at: new Date(),
     });
     const paymentId = paymentRes.insertedId as ObjectId;
 
-    // 3) Create a Helio charge with additionalJSON
-    const HELIO_API_KEY = envOrThrow("HELIO_API_KEY");
+    // 3) Create Helio charge with additionalJSON
+    const HELIO_SECRET = envOrThrowTrim("HELIO_API_KEY_SECRET"); // Secret key (Bearer)
+    const HELIO_PUBLIC = envOrThrowTrim("HELIO_API_KEY_PUBLIC"); // Public key
 
     const chargeBody = {
-      paylinkId: helioPaylinkId,
-      amount: String(amount), // Helio often expects string for dynamic pricing
+      paylinkId: HELIO_PAYLINK_ID,
+      amount: String(amount), // safest for Helio dynamic pricing
       currency,
       additionalJSON: {
         paymentId: String(paymentId),
         portfolioId: String(portfolioId),
         username: portfolioData.username,
       },
+      // Some stacks read the public key from body; harmless to include
+      apiKey: HELIO_PUBLIC,
     };
 
     const helioResp = await fetch("https://api.hel.io/v1/charge/api-key", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${HELIO_API_KEY}`,
+        Authorization: `Bearer ${HELIO_SECRET}`, // SECRET in bearer
+        "x-api-key": HELIO_PUBLIC,               // PUBLIC as header (extra safety)
         "Content-Type": "application/json",
       },
       body: JSON.stringify(chargeBody),
@@ -124,11 +125,10 @@ export async function POST(req: NextRequest) {
     }
 
     const charge: HelioChargeResponse = await helioResp.json().catch(() => ({}));
-
     const payment_url =
       charge.checkoutUrl ||
       charge.url ||
-      `https://app.hel.io/pay/${helioPaylinkId}`;
+      `https://app.hel.io/pay/${HELIO_PAYLINK_ID}`;
 
     // 4) Respond to client
     return NextResponse.json({
