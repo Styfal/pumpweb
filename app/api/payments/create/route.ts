@@ -1,37 +1,9 @@
-// app/api/payments/create/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { type NextRequest, NextResponse } from "next/server";
-import { validateUsername } from "@/lib/portfolio-utils";
-
-type CreatePaymentRequest = {
-  portfolioData: {
-    username: string;
-    token_name: string;
-    ticker?: string;
-    contract_address?: string;
-    slogan?: string;
-    description?: string;
-    template: string;
-    logo_url?: string;
-    banner_url?: string;
-    twitter_url?: string;
-    telegram_url?: string;
-    website_url?: string;
-  };
-  amount: number;
-  currency?: string;
-};
-
-type HelioChargeResponse = {
-  checkoutUrl?: string;
-  url?: string;
-  id?: string;
-  [key: string]: unknown;
-};
 
 function envOrThrowTrim(key: string): string {
   const v = process.env[key];
@@ -41,20 +13,15 @@ function envOrThrowTrim(key: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const body: CreatePaymentRequest = await req.json();
+    const body = await req.json();
     const { portfolioData, amount, currency = "USD" } = body;
 
     if (!portfolioData?.username || !portfolioData?.token_name) {
-      return NextResponse.json({ error: "Missing portfolioData.username/token_name" }, { status: 400 });
+      return NextResponse.json({ error: "Missing portfolio data" }, { status: 400 });
     }
+
     if (typeof amount !== "number" || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
-    }
-    if (typeof validateUsername === "function" && !validateUsername(portfolioData.username)) {
-      return NextResponse.json(
-        { error: "Username must be 3-30 chars, alphanumeric and hyphens only" },
-        { status: 400 }
-      );
     }
 
     const db = await getDb();
@@ -83,32 +50,32 @@ export async function POST(req: NextRequest) {
     });
     const paymentId = paymentRes.insertedId as ObjectId;
 
-    // 3) Create Helio charge with additionalJSON
-    const HELIO_SECRET = envOrThrowTrim("HELIO_API_KEY_SECRET"); // Secret key (Bearer)
-    const HELIO_PUBLIC = envOrThrowTrim("HELIO_API_KEY_PUBLIC"); // Public key
+    // 3) Create Helio charge (mirrors your Postman request)
+    const HELIO_SECRET = envOrThrowTrim("HELIO_API_KEY_SECRET"); // Bearer
+    const HELIO_PUBLIC = envOrThrowTrim("HELIO_API_KEY_PUBLIC"); // Query param
 
-    const chargeBody = {
-      paylinkId: HELIO_PAYLINK_ID,
-      amount: String(amount), // safest for Helio dynamic pricing
-      currency,
-      additionalJSON: {
-        paymentId: String(paymentId),
-        portfolioId: String(portfolioId),
-        username: portfolioData.username,
-      },
-      // Some stacks read the public key from body; harmless to include
-      apiKey: HELIO_PUBLIC,
-    };
-
-    const helioResp = await fetch("https://api.hel.io/v1/charge/api-key", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${HELIO_SECRET}`, // SECRET in bearer
-        "x-api-key": HELIO_PUBLIC,               // PUBLIC as header (extra safety)
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(chargeBody),
-    });
+    const helioResp = await fetch(
+      `https://api.hel.io/v1/charge/api-key?apiKey=${HELIO_PUBLIC}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${HELIO_SECRET}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentRequestId: HELIO_PAYLINK_ID,
+          prepareRequestBody: {
+            customerDetails: {
+              additionalJSON: JSON.stringify({
+                paymentId: String(paymentId),
+                portfolioId: String(portfolioId),
+                username: portfolioData.username,
+              }),
+            },
+          },
+        }),
+      }
+    );
 
     if (!helioResp.ok) {
       const txt = await helioResp.text().catch(() => "");
@@ -124,11 +91,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const charge: HelioChargeResponse = await helioResp.json().catch(() => ({}));
-    const payment_url =
-      charge.checkoutUrl ||
-      charge.url ||
-      `https://app.hel.io/pay/${HELIO_PAYLINK_ID}`;
+    const charge = await helioResp.json().catch(() => ({}));
+    const payment_url = charge.pageUrl || `https://app.hel.io/pay/${HELIO_PAYLINK_ID}`;
 
     // 4) Respond to client
     return NextResponse.json({

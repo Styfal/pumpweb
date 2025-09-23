@@ -1,4 +1,3 @@
-// app/api/webhooks/helio/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -10,8 +9,9 @@ function isAuthorized(req: NextRequest): { ok: boolean; reason?: string } {
   const secret = (process.env.HELIO_WEBHOOK_SECRET ?? "").trim();
   if (!secret) return { ok: false, reason: "env_secret_missing" };
   const auth = (req.headers.get("authorization") ?? "").trim();
-  // We only use the bearer secret for webhooks.
-  if (auth.toLowerCase().startsWith("bearer ") && auth.slice(7).trim() === secret) return { ok: true };
+  if (auth.toLowerCase().startsWith("bearer ") && auth.slice(7).trim() === secret) {
+    return { ok: true };
+  }
   return { ok: false, reason: "no_or_mismatch_token" };
 }
 
@@ -20,13 +20,11 @@ type HelioPayload = {
   transactionObject?: {
     id?: string;
     paylinkId?: string;
-    meta?: { transactionStatus?: string; amount?: string; [k: string]: unknown };
-    additionalJSON?: Record<string, unknown>;
-    [k: string]: unknown;
+    meta?: { transactionStatus?: string };
+    additionalJSON?: string | Record<string, unknown>;
   };
-  transaction?: string; // sometimes a stringified duplicate
-  additionalJSON?: Record<string, unknown>; // sometimes appears at top level
-  [k: string]: unknown;
+  transaction?: string;
+  additionalJSON?: string | Record<string, unknown>;
 };
 
 function toAppStatus(helioStatus: string): "pending" | "completed" | "failed" {
@@ -42,19 +40,19 @@ function isRec(x: unknown): x is Record<string, unknown> {
 
 export async function POST(req: NextRequest) {
   const auth = isAuthorized(req);
-  if (!auth.ok) return NextResponse.json({ error: "Unauthorized", reason: auth.reason }, { status: 401 });
+  if (!auth.ok) {
+    return NextResponse.json({ error: "Unauthorized", reason: auth.reason }, { status: 401 });
+  }
 
   try {
     const body = (await req.json()) as HelioPayload;
 
-    // If payload is duplicated under `transaction` as a string, parse it
+    // Fallback if payload is stringified
     if (!body.transactionObject && body.transaction) {
       try {
         const parsed = JSON.parse(body.transaction);
         if (isRec(parsed)) body.transactionObject = parsed as HelioPayload["transactionObject"];
-      } catch {
-        // ignore parse errors
-      }
+      } catch {}
     }
 
     const txObj = body.transactionObject || {};
@@ -63,37 +61,42 @@ export async function POST(req: NextRequest) {
     const helioStatus = String(txObj.meta?.transactionStatus ?? "");
     const mapped = toAppStatus(helioStatus);
 
-    // Prefer additionalJSON from any known spot
-    const addl =
-      (isRec(body.additionalJSON) && body.additionalJSON) ||
-      (isRec(txObj.additionalJSON) && txObj.additionalJSON) ||
-      null;
+    // Parse additionalJSON safely
+    let addl: Record<string, unknown> | null = null;
+    const rawAddl = txObj.additionalJSON ?? body.additionalJSON;
+    if (typeof rawAddl === "string") {
+      try { addl = JSON.parse(rawAddl); } catch {}
+    } else if (isRec(rawAddl)) {
+      addl = rawAddl;
+    }
 
     const paymentIdStr = addl && typeof addl.paymentId === "string" ? addl.paymentId : null;
     const portfolioIdStr = addl && typeof addl.portfolioId === "string" ? addl.portfolioId : null;
 
     const db = await getDb();
 
-    // Update payment idempotently
-    let updatedPaymentId: ObjectId | null = null;
-
+    // Update payment
     if (paymentIdStr && ObjectId.isValid(paymentIdStr)) {
       const pid = new ObjectId(paymentIdStr);
-      const res = await db.collection("payments").findOneAndUpdate(
-        { _id: pid, status: { $ne: mapped } },
-        { $set: { status: mapped, helio_tx_id: helioTxId, updated_at: new Date() } },
-        { returnDocument: "after" }
+      await db.collection("payments").updateOne(
+        { _id: pid },
+        { $set: { status: mapped, helio_tx_id: helioTxId, updated_at: new Date() } }
       );
-      updatedPaymentId = pid;
-      if (!res || !res.value) {
-        // Ensure tx id is captured even if status already set
-        await db.collection("payments").updateOne(
-          { _id: pid, helio_tx_id: { $ne: helioTxId } },
-          { $set: { helio_tx_id: helioTxId, updated_at: new Date() } }
-        );
+
+      // Publish portfolio if completed
+      if (mapped === "completed") {
+        const targetPortfolioId = portfolioIdStr && ObjectId.isValid(portfolioIdStr)
+          ? new ObjectId(portfolioIdStr)
+          : (await db.collection("payments").findOne({ _id: pid }))?.portfolio_id;
+        if (targetPortfolioId) {
+          await db.collection("portfolios").updateOne(
+            { _id: targetPortfolioId },
+            { $set: { is_published: true, published_at: new Date() } }
+          );
+        }
       }
     } else if (paylinkId) {
-      // Fallback (webhook-only): most recent pending for this paylink
+      // Fallback: update latest pending payment for this paylink
       const pending = await db
         .collection("payments")
         .find({ helio_paylink_id: paylinkId, status: "pending" })
@@ -102,44 +105,13 @@ export async function POST(req: NextRequest) {
         .toArray();
 
       if (pending[0]?._id) {
-        updatedPaymentId = pending[0]._id as ObjectId;
         await db.collection("payments").updateOne(
-          { _id: updatedPaymentId },
+          { _id: pending[0]._id },
           { $set: { status: mapped, helio_tx_id: helioTxId, updated_at: new Date() } }
         );
-      } else {
-        console.warn("[helio webhook] No pending payment found for paylink:", paylinkId);
-      }
-    }
-
-    // Publish portfolio on success
-    if (mapped === "completed") {
-      if (portfolioIdStr && ObjectId.isValid(portfolioIdStr)) {
-        await db.collection("portfolios").updateOne(
-          { _id: new ObjectId(portfolioIdStr) },
-          { $set: { is_published: true, published_at: new Date() } }
-        );
-      } else if (updatedPaymentId) {
-        const pmt = await db.collection("payments").findOne({ _id: updatedPaymentId });
-        const portfolio_id = pmt?.portfolio_id as ObjectId | undefined;
-        if (portfolio_id instanceof ObjectId) {
+        if (mapped === "completed") {
           await db.collection("portfolios").updateOne(
-            { _id: portfolio_id },
-            { $set: { is_published: true, published_at: new Date() } }
-          );
-        }
-      } else if (paylinkId) {
-        // Last resort: derive via latest updated payment on this paylink
-        const pmt = await db
-          .collection("payments")
-          .find({ helio_paylink_id: paylinkId })
-          .sort({ updated_at: -1, created_at: -1 })
-          .limit(1)
-          .toArray();
-        const portfolio_id = pmt[0]?.portfolio_id as ObjectId | undefined;
-        if (portfolio_id instanceof ObjectId) {
-          await db.collection("portfolios").updateOne(
-            { _id: portfolio_id },
+            { _id: pending[0].portfolio_id },
             { $set: { is_published: true, published_at: new Date() } }
           );
         }
