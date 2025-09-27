@@ -30,7 +30,6 @@ type PortfolioDoc = {
 
 export async function GET(req: NextRequest) {
   try {
-    // read `[paymentId]` from the URL without using the context arg
     const segments = req.nextUrl.pathname.split("/").filter(Boolean);
     const paymentId = segments[segments.length - 1];
 
@@ -42,23 +41,7 @@ export async function GET(req: NextRequest) {
     const paymentsCol = db.collection<PaymentDoc>("payments");
     const portfoliosCol = db.collection<PortfolioDoc>("portfolios");
 
-    const payment = await paymentsCol.findOne(
-      { _id: new ObjectId(paymentId) },
-      {
-        projection: {
-          status: 1,
-          amount: 1,
-          currency: 1,
-          portfolio_id: 1,
-          helio_paylink_id: 1,
-          helio_tx_id: 1,
-          verified_at: 1,
-          updated_at: 1,
-          created_at: 1,
-        },
-      }
-    );
-
+    const payment = await paymentsCol.findOne({ _id: new ObjectId(paymentId) });
     if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }
@@ -71,6 +54,12 @@ export async function GET(req: NextRequest) {
     const portfolioUrl =
       portfolio && portfolio.is_published ? `/portfolio/${portfolio.username}` : null;
 
+    // 🚀 Redirect when payment is complete + portfolio is published
+    if (payment.status === "completed" && portfolioUrl) {
+      return NextResponse.redirect(new URL(portfolioUrl, req.url));
+    }
+
+    // Otherwise just return JSON (same as before)
     return NextResponse.json({
       payment: {
         id: payment._id.toString(),

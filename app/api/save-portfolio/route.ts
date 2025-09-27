@@ -32,7 +32,11 @@ export async function POST(request: NextRequest) {
     const parsed = portfolioSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: "Invalid portfolio data", issues: parsed.error.format() },
+        {
+          success: false,
+          error: "Invalid portfolio data",
+          issues: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
@@ -40,7 +44,9 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
 
     // Check for existing username
-    const existing = await db.collection("portfolios").findOne({ username: data.username });
+    const existing = await db
+      .collection("portfolios")
+      .findOne({ username: data.username });
     if (existing) {
       return NextResponse.json(
         { success: false, error: "Username already exists" },
@@ -51,7 +57,10 @@ export async function POST(request: NextRequest) {
     // Construct portfolio object
     const portfolio = {
       ...data,
-      is_published: false, // Will be set true after webhook verification
+      // 👇 ensure logo_url & banner_url always exist in DB
+      logo_url: data.logo_url ?? null,
+      banner_url: data.banner_url ?? null,
+      is_published: false, // Will be flipped true after webhook verification
       created_at: new Date(),
     };
 
