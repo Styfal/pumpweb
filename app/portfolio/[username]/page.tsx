@@ -1,13 +1,13 @@
-// app/portfolio/[username]/page.tsx
+// /app/portfolio/[username]/page.tsx
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/mongodb";
 import type { ObjectId } from "mongodb";
-import { renderTemplateDB } from "@/lib/template" // <-- registry with centered/side/minimal
+import { PortfolioRenderer } from "@/components/portfolio-renderer";
+import { getTemplateByName } from "@/lib/registry";
 
-// Matches your Mongo schema exactly
 type PortfolioDoc = {
   _id: ObjectId;
   username: string;
@@ -19,64 +19,42 @@ type PortfolioDoc = {
   twitter_url: string;
   telegram_url: string;
   website_url: string;
-  template: string;            // "centered" | "side" | "minimal"
-  logo_url: string | null;     // token icon
-  banner_url: string | null;   // blurred background
+  template: string;          // "modern" | "classic" | "minimal"
+  logo_url: string | null;
+  banner_url: string | null;
   is_published: boolean;
-  created_at?: Date | string;
-  updated_at?: Date | string;
-  published_at?: Date | string;
 };
 
-// Updated type definition to match Next.js App Router expectations
-interface PageProps {
-  params: Promise<{ username: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-export default async function PortfolioPage({ params }: PageProps) {
-  // Await the params since it's now a Promise
-  const { username } = await params;
-  
+export default async function Page({ params }: { params: { username: string } }) {
   const db = await getDb();
 
   const doc = await db.collection<PortfolioDoc>("portfolios").findOne(
-    { username, is_published: true },
+    { username: params.username, is_published: true },
     {
       projection: {
-        // return only what you use
-        username: 1,
-        token_name: 1,
-        ticker: 1,
-        contract_address: 1,
-        slogan: 1,
-        description: 1,
-        twitter_url: 1,
-        telegram_url: 1,
-        website_url: 1,
-        template: 1,
-        logo_url: 1,
-        banner_url: 1,
-        is_published: 1,
+        username: 1, token_name: 1, ticker: 1, contract_address: 1, slogan: 1,
+        description: 1, twitter_url: 1, telegram_url: 1, website_url: 1,
+        template: 1, logo_url: 1, banner_url: 1,
       },
     }
   );
 
   if (!doc) return notFound();
 
-  // Render by template name using the DB fields directly
-  return renderTemplateDB({
-    username: doc.username,
-    token_name: doc.token_name,
+  const portfolio = {
+    token_name: doc.token_name ?? "",
     ticker: doc.ticker ?? "",
     contract_address: doc.contract_address ?? "",
     slogan: doc.slogan ?? "",
     description: doc.description ?? "",
+    logo_url: doc.logo_url ?? "",
+    banner_url: doc.banner_url ?? "",
     twitter_url: doc.twitter_url ?? "",
     telegram_url: doc.telegram_url ?? "",
     website_url: doc.website_url ?? "",
-    template: (doc.template || "centered").toLowerCase(),
-    logo_url: doc.logo_url,       // Use property name that matches PortfolioDB
-    banner_url: doc.banner_url,   // Use property name that matches PortfolioDB
-  });
+  };
+
+  const template = getTemplateByName(doc.template); // defaults handled in registry
+
+  return <PortfolioRenderer portfolio={portfolio} template={template} />;
 }
