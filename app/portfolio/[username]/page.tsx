@@ -25,11 +25,12 @@ type PortfolioDoc = {
   is_published: boolean;
 };
 
-export default async function Page({ params }: { params: { username: string } }) {
+export default async function Page({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
   const db = await getDb();
 
   const doc = await db.collection<PortfolioDoc>("portfolios").findOne(
-    { username: params.username, is_published: true },
+    { username, is_published: true },
     {
       projection: {
         username: 1, token_name: 1, ticker: 1, contract_address: 1, slogan: 1,
