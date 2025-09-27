@@ -12,26 +12,26 @@ export type PortfolioDB = {
   twitter_url: string;
   telegram_url: string;
   website_url: string;
-  template: string;               // "centered" | "side" | "minimal"
-  logo_url: string | null;        // token icon
-  banner_url: string | null;      // blurred background
+  template: string;               // "modern" | "classic" | "minimal"
+  logo_url: string | null;
+  banner_url: string | null;
 };
 
 export type TemplateDBComponent = (p: PortfolioDB) => React.JSX.Element;
 
 export const TEMPLATES_DB: Record<string, TemplateDBComponent> = {
-  centered: CenterHeroTemplate,
-  side: SideHeroTemplate,
+  modern: ModernTemplate,     // was centered
+  classic: ClassicTemplate,   // was side
   minimal: MinimalTemplate,
 };
 
 export function renderTemplateDB(p: PortfolioDB) {
-  const key = (p.template || "centered").toLowerCase();
-  const Comp = TEMPLATES_DB[key] ?? TEMPLATES_DB.centered;
+  const key = (p.template || "modern").toLowerCase();
+  const Comp = TEMPLATES_DB[key] ?? TEMPLATES_DB.modern;
   return <Comp {...p} />;
 }
 
-/* ----------------------- Shared helpers ----------------------- */
+/* ----------------------- Shared helpers (unchanged) ----------------------- */
 
 function BgBlur({ src }: { src: string | null }) {
   return (
@@ -65,7 +65,7 @@ function TokenIcon({ src, alt }: { src: string | null; alt: string }) {
 
 function ContractPill({ ca }: { ca: string }) {
   if (!ca) return null;
-  const copy = () => navigator.clipboard.writeText(ca);
+  const copy = () => typeof navigator !== "undefined" && navigator.clipboard.writeText(ca);
   return (
     <button
       onClick={copy}
@@ -100,8 +100,8 @@ function Ctas({ p }: { p: PortfolioDB }) {
 
 /* ----------------------- Templates ----------------------- */
 
-// Template 1 — Centered hero
-function CenterHeroTemplate(p: PortfolioDB) {
+// Template 1 — Modern (was Centered)
+function ModernTemplate(p: PortfolioDB) {
   return (
     <main className="min-h-screen text-white flex items-center justify-center">
       <BgBlur src={p.banner_url} />
@@ -121,8 +121,8 @@ function CenterHeroTemplate(p: PortfolioDB) {
   );
 }
 
-// Template 2 — Side-by-side hero
-function SideHeroTemplate(p: PortfolioDB) {
+// Template 2 — Classic (was Side-by-side)
+function ClassicTemplate(p: PortfolioDB) {
   return (
     <main className="min-h-screen text-white flex items-center">
       <BgBlur src={p.banner_url} />
@@ -146,7 +146,7 @@ function SideHeroTemplate(p: PortfolioDB) {
   );
 }
 
-// Template 3 — Minimal clean
+// Template 3 — Minimal
 function MinimalTemplate(p: PortfolioDB) {
   return (
     <main className="min-h-screen bg-white text-slate-900 flex items-center">
@@ -172,9 +172,21 @@ function MinimalTemplate(p: PortfolioDB) {
               </code>
             )}
             <div className="flex flex-wrap gap-2">
-              {p.website_url && <a className="px-3 py-1.5 border rounded" href={p.website_url} target="_blank">Website</a>}
-              {p.twitter_url && <a className="px-3 py-1.5 border rounded" href={p.twitter_url} target="_blank">X.com</a>}
-              {p.telegram_url && <a className="px-3 py-1.5 border rounded" href={p.telegram_url} target="_blank">Telegram</a>}
+              {p.website_url && (
+                <a className="px-3 py-1.5 border rounded" href={p.website_url} target="_blank">
+                  Website
+                </a>
+              )}
+              {p.twitter_url && (
+                <a className="px-3 py-1.5 border rounded" href={p.twitter_url} target="_blank">
+                  X.com
+                </a>
+              )}
+              {p.telegram_url && (
+                <a className="px-3 py-1.5 border rounded" href={p.telegram_url} target="_blank">
+                  Telegram
+                </a>
+              )}
             </div>
           </div>
         </div>

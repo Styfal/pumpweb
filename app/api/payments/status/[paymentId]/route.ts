@@ -28,10 +28,12 @@ type PortfolioDoc = {
   published_at?: Date;
 };
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { paymentId: string } }
+) {
   try {
-    const segments = req.nextUrl.pathname.split("/").filter(Boolean);
-    const paymentId = segments[segments.length - 1];
+    const { paymentId } = params;
 
     if (!paymentId || !ObjectId.isValid(paymentId)) {
       return NextResponse.json({ error: "Invalid payment id" }, { status: 400 });
@@ -51,15 +53,10 @@ export async function GET(req: NextRequest) {
       { projection: { username: 1, token_name: 1, is_published: 1 } }
     );
 
-    const portfolioUrl =
+    const url =
       portfolio && portfolio.is_published ? `/portfolio/${portfolio.username}` : null;
 
-    // 🚀 Redirect when payment is complete + portfolio is published
-    if (payment.status === "completed" && portfolioUrl) {
-      return NextResponse.redirect(new URL(portfolioUrl, req.url));
-    }
-
-    // Otherwise just return JSON (same as before)
+    // 🔁 Always JSON; client decides when to redirect
     return NextResponse.json({
       payment: {
         id: payment._id.toString(),
@@ -76,7 +73,7 @@ export async function GET(req: NextRequest) {
             username: portfolio.username,
             token_name: portfolio.token_name ?? null,
             is_published: !!portfolio.is_published,
-            url: portfolioUrl,
+            url, // <-- client can router.push(url) when status === "completed"
           }
         : null,
     });

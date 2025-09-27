@@ -1,41 +1,66 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { PaymentService, type PaymentStatus } from "@/lib/payment-service"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react"
-import Link from "next/link"
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PaymentService, type PaymentStatus } from "@/lib/payment-service";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 interface PaymentStatusProps {
-  paymentId: string
-  onComplete?: (portfolioUrl: string) => void
+  paymentId: string;
+  onComplete?: (portfolioUrl: string) => void;
 }
 
 export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusProps) {
-  const [status, setStatus] = useState<PaymentStatus | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState<PaymentStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const redirected = useRef(false); // prevent double redirect
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // start polling
   useEffect(() => {
-    // Start polling payment status
     PaymentService.pollPaymentStatus(paymentId, (newStatus) => {
-      setStatus(newStatus)
-      setLoading(false)
+      setStatus(newStatus);
+      setLoading(false);
+    });
 
-      // Call onComplete when portfolio is published
-      if (newStatus.payment.status === "completed" && newStatus.payment.portfolio?.url && onComplete) {
-        onComplete(newStatus.payment.portfolio.url)
-      }
-    })
-
-    // Initial status check
+    // initial fetch (optional safety)
     PaymentService.checkPaymentStatus(paymentId).then((initialStatus) => {
       if (initialStatus) {
-        setStatus(initialStatus)
-        setLoading(false)
+        setStatus(initialStatus);
+        setLoading(false);
       }
-    })
-  }, [paymentId, onComplete])
+    });
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [paymentId]);
+
+  // handle redirect when completed
+  useEffect(() => {
+    if (!status) return;
+
+    // NOTE: if your PaymentService returns portfolio at the top level instead of nested,
+    // change the next two lines to:
+    // const url = status.portfolio?.url;
+    const url = status.payment.portfolio?.url;
+
+    if (status.payment.status === "completed" && url && !redirected.current) {
+      redirected.current = true;
+
+      // call user callback first, if provided
+      onComplete?.(url);
+
+      // small delay for UI to show "Completed!"
+      timerRef.current = setTimeout(() => {
+        router.push(url);
+      }, 1500);
+    }
+  }, [status, onComplete, router]);
 
   if (loading) {
     return (
@@ -50,7 +75,7 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
           <p className="text-sm text-muted-foreground">Please wait while we verify your payment...</p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (!status) {
@@ -66,10 +91,10 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
           <p className="text-sm text-muted-foreground">Unable to find payment information.</p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const { payment } = status
+  const { payment } = status;
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -84,7 +109,9 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
           {payment.status === "pending" && "Payment Pending"}
         </CardTitle>
 
-        {payment.portfolio && <CardDescription>Portfolio for {payment.portfolio.token_name}</CardDescription>}
+        {payment.portfolio && (
+          <CardDescription>Portfolio for {payment.portfolio.token_name}</CardDescription>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -106,7 +133,9 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
           {payment.verified_at && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Verified:</span>
-              <span className="font-medium text-xs">{new Date(payment.verified_at).toLocaleString()}</span>
+              <span className="font-medium text-xs">
+                {new Date(payment.verified_at).toLocaleString()}
+              </span>
             </div>
           )}
         </div>
@@ -123,13 +152,15 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
         {payment.status === "pending" && (
           <div className="text-center text-sm text-muted-foreground">
             <p>Your payment is being processed...</p>
-            <p>This usually takes 1-2 minutes.</p>
+            <p>This usually takes a minute.</p>
           </div>
         )}
 
         {payment.status === "failed" && (
           <div className="text-center">
-            <p className="text-sm text-red-600 mb-3">Payment failed. Please try again or contact support.</p>
+            <p className="text-sm text-red-600 mb-3">
+              Payment failed. Please try again or contact support.
+            </p>
             <Button variant="outline" asChild>
               <Link href="/">Try Again</Link>
             </Button>
@@ -137,5 +168,5 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
