@@ -28,17 +28,20 @@ type PortfolioDoc = {
   published_at?: Date | string;
 };
 
-// Fix the type definition to match Next.js App Router expectations
+// Updated type definition to match Next.js App Router expectations
 interface PageProps {
-  params: { username: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  params: Promise<{ username: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function PortfolioPage({ params }: PageProps) {
+  // Await the params since it's now a Promise
+  const { username } = await params;
+  
   const db = await getDb();
 
   const doc = await db.collection<PortfolioDoc>("portfolios").findOne(
-    { username: params.username, is_published: true },
+    { username, is_published: true },
     {
       projection: {
         // return only what you use
