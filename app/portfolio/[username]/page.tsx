@@ -28,11 +28,13 @@ type PortfolioDoc = {
   published_at?: Date | string;
 };
 
-export default async function PortfolioPage({
-  params,
-}: {
+// Fix the type definition to match Next.js App Router expectations
+interface PageProps {
   params: { username: string };
-}) {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default async function PortfolioPage({ params }: PageProps) {
   const db = await getDb();
 
   const doc = await db.collection<PortfolioDoc>("portfolios").findOne(
@@ -71,7 +73,7 @@ export default async function PortfolioPage({
     telegram_url: doc.telegram_url ?? "",
     website_url: doc.website_url ?? "",
     template: (doc.template || "centered").toLowerCase(),
-    logo_url: doc.logo_url ?? null,
-    banner_url: doc.banner_url ?? null,
+    logo_url: doc.logo_url,       // Use property name that matches PortfolioDB
+    banner_url: doc.banner_url,   // Use property name that matches PortfolioDB
   });
 }
