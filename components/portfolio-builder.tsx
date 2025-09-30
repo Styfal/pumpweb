@@ -77,7 +77,7 @@ const portfolioSchema = z.object({
     .refine(val => !val || val.includes("discord") || val.includes("discord.gg"), "Must be a valid Discord link")
     .optional()
     .or(z.literal("")),
-  template: z.enum(["modern", "classic"], { errorMap: () => ({ message: "Please select a valid template" }) }),
+  template: z.enum(["modern", "classic", "minimal"], { errorMap: () => ({ message: "Please select a valid template" }) }),
   logo_url: z.string().refine(val => validateImageSize(val, 5), "Logo image must be smaller than 5MB").nullable().optional(),
   banner_url: z.string().refine(val => validateImageSize(val, 10), "Banner image must be smaller than 10MB").nullable().optional(),
 })
@@ -100,6 +100,7 @@ export interface PortfolioData {
 const templates = [
   { value: "modern", label: "Modern" },
   { value: "classic", label: "Classic" },
+  { value: "minimal", label: "Minimal" },
 ]
 
 type FormStep = "form" | "payment" | "success"
@@ -451,17 +452,6 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Discord / Manage Portfolio Link</Label>
-                <Input
-                  value={formData.discord_url}
-                  onChange={e => handleInputChange("discord_url" as keyof PortfolioData, e.target.value)}
-                  placeholder="https://discord.gg/your-invite or https://discord.com/..."
-                  className={`bg-[#2a2a2a] border ${validationErrors.discord_url ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
-                />
-                {validationErrors.discord_url && <p className="text-sm text-red-500 mt-1">{validationErrors.discord_url}</p>}
-              </div>
-
-              <div>
                 <Label className="text-[#e0e0e0]">Template</Label>
                 <Select value={formData.template} onValueChange={val => handleInputChange("template", val)}>
                   <SelectTrigger className={`bg-[#2a2a2a] border ${validationErrors.template ? "border-red-500" : "border-[#444]"} text-white`}>
@@ -507,6 +497,15 @@ export function PortfolioBuilder() {
                   <CreditCard className="mr-2 h-4 w-4" /> Purchase Portfolio ($1)
                 </>
               )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-[#444] text-[#e0e0e0] hover:bg-[#2a2a2a]"
+              onClick={() => window.open("https://discord.gg/your-invite", "_blank")}
+            >
+              Manage Portfolio
             </Button>
 
             <div className="text-center text-sm text-[#bbb] space-y-1">

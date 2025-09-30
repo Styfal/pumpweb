@@ -61,12 +61,6 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
       banner_url: escapeHtml(banner_url),
     }
 
-    const socialLinksHtml = [
-      safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : "",
-      safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : "",
-      safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : "",
-    ].join(" ")
-
     const modernHtml = () => {
       return `
       <!doctype html>
@@ -76,36 +70,38 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>${safe.token_name || "Preview"}</title>
         <style>
-          :root{--bg:#0f172a;--glass:rgba(0,0,0,0.45);--accent:#10b981}
-          *{box-sizing:border-box}
-          html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-          body{background:var(--bg);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px}
-          .wrap{width:100%;max-width:900px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
-          .hero{position:relative;padding:48px 36px;text-align:center}
-          .blur{position:absolute;inset:0;background:${safe.banner_url ? `url('${safe.banner_url}') center/cover no-repeat` : "#0f172a"};filter:blur(12px) scale(1.05);opacity:0.7}
-          .overlay{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.45))}
-          .content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px}
-          .icon{width:120px;height:120px;border-radius:18px;border:4px solid rgba(255,255,255,0.9);background:${safe.logo_url ? `url('${safe.logo_url}') center/cover no-repeat` : "#071025"}}
-          h1{font-size:34px;margin:0}
+          *{margin:0;padding:0;box-sizing:border-box}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+          .bg-blur{position:fixed;inset:0;z-index:-2;background:${safe.banner_url ? `url('${safe.banner_url}')` : '#0f172a'};background-size:cover;background-position:center;filter:blur(12px);transform:scale(1.1)}
+          .bg-overlay{position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.45)}
+          .container{display:flex;align-items:center;gap:32px;color:white}
+          .icon{width:160px;height:160px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);box-shadow:0 20px 40px rgba(0,0,0,0.3);flex-shrink:0;background:${safe.logo_url ? `url('${safe.logo_url}')` : '#0b1220'};background-size:cover;background-position:center}
+          .content{display:flex;flex-direction:column;gap:16px}
+          h1{font-size:40px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
           .ticker{opacity:0.9}
-          .slogan{color:rgba(255,255,255,0.9);font-size:16px;margin:0}
-          .contract{margin-top:8px;background:rgba(0,0,0,0.6);display:inline-block;padding:8px 12px;border-radius:10px;font-size:13px}
-          .ctas{margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-          .btn{display:inline-block;padding:8px 14px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
-          @media (max-width:600px){.icon{width:84px;height:84px}.hero{padding:28px}}
+          .slogan{font-size:18px;color:rgba(255,255,255,0.9)}
+          .contract{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s}
+          .contract:hover{background:rgba(0,0,0,0.7)}
+          .contract span{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .ctas{display:flex;flex-wrap:wrap;gap:12px}
+          .btn{display:inline-block;padding:8px 16px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
+          .btn:hover{background:#059669}
+          @media(max-width:768px){.container{flex-direction:column;text-align:center}.icon{width:128px;height:128px}}
         </style>
       </head>
       <body>
-        <div class="wrap">
-          <div class="hero">
-            <div class="blur"></div>
-            <div class="overlay"></div>
-            <div class="content">
-              <div class="icon" role="img" aria-label="${safe.token_name} icon"></div>
-              <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
-              ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
-              ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
-              <div class="ctas">${socialLinksHtml}</div>
+        <div class="bg-blur"></div>
+        <div class="bg-overlay"></div>
+        <div class="container">
+          <div class="icon"></div>
+          <div class="content">
+            <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
+            ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
+            ${safe.contract_address ? `<div class="contract" onclick="navigator.clipboard&&navigator.clipboard.writeText('${safe.contract_address}')"><span>${safe.contract_address}</span><span>📋</span></div>` : ""}
+            <div class="ctas">
+              ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : ""}
+              ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : ""}
+              ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : ""}
             </div>
           </div>
         </div>
@@ -123,29 +119,44 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>${safe.token_name || "Preview"}</title>
         <style>
-          *{box-sizing:border-box}
-          body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#081225;color:#fff;display:flex;align-items:center;justify-content:center;padding:20px}
-          .wrap{width:100%;max-width:1100px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
-          .hero{display:grid;grid-template-columns:220px 1fr;gap:30px;align-items:center;padding:28px;background:${safe.banner_url ? `url('${safe.banner_url}') center/cover no-repeat` : "#081225"};background-size:cover}
-          .left{display:flex;justify-content:center}
-          .icon{width:160px;height:160px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);background:${safe.logo_url ? `url('${safe.logo_url}') center/cover no-repeat` : "#071025"}}
-          .right h1{margin:0;font-size:32px}
-          .slogan{color:rgba(255,255,255,0.9);margin-top:6px}
-          .contract{margin-top:8px;background:rgba(0,0,0,0.5);display:inline-block;padding:8px 12px;border-radius:10px;font-size:13px}
-          .ctas{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
-          .btn{display:inline-block;padding:8px 14px;border-radius:8px;background:#10b981;color:#fff;text-decoration:none;font-weight:600}
-          @media (max-width:800px){.hero{grid-template-columns:1fr; text-align:center}.left{order:0}}
+          *{margin:0;padding:0;box-sizing:border-box}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;padding:24px;position:relative;overflow:hidden}
+          .bg-blur{position:fixed;inset:0;z-index:-2;background:${safe.banner_url ? `url('${safe.banner_url}')` : '#0f172a'};background-size:cover;background-position:center;filter:blur(12px);transform:scale(1.1)}
+          .bg-overlay{position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.45)}
+          .container{width:100%;max-width:1280px;margin:0 auto;color:white}
+          .grid{display:grid;grid-template-columns:200px 1fr;gap:40px;align-items:center}
+          .icon-wrapper{display:flex;justify-content:center}
+          .icon{width:192px;height:192px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);box-shadow:0 20px 40px rgba(0,0,0,0.3);background:${safe.logo_url ? `url('${safe.logo_url}')` : '#0b1220'};background-size:cover;background-position:center}
+          .content{display:flex;flex-direction:column;gap:16px}
+          h1{font-size:48px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
+          .ticker{opacity:0.9}
+          .slogan{font-size:18px;color:rgba(255,255,255,0.9)}
+          .contract{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;max-width:fit-content}
+          .contract:hover{background:rgba(0,0,0,0.7)}
+          .contract span{max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .ctas{display:flex;flex-wrap:wrap;gap:12px}
+          .btn{display:inline-block;padding:8px 16px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
+          .btn:hover{background:#059669}
+          @media(max-width:800px){.grid{grid-template-columns:1fr;text-align:center}.icon-wrapper{justify-content:center}.contract{margin:0 auto}}
         </style>
       </head>
       <body>
-        <div class="wrap">
-          <div class="hero">
-            <div class="left"><div class="icon" role="img" aria-label="${safe.token_name} icon"></div></div>
-            <div class="right">
+        <div class="bg-blur"></div>
+        <div class="bg-overlay"></div>
+        <div class="container">
+          <div class="grid">
+            <div class="icon-wrapper">
+              <div class="icon"></div>
+            </div>
+            <div class="content">
               <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
               ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
-              ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
-              <div class="ctas">${socialLinksHtml}</div>
+              ${safe.contract_address ? `<div class="contract" onclick="navigator.clipboard&&navigator.clipboard.writeText('${safe.contract_address}')"><span>${safe.contract_address}</span><span>📋</span></div>` : ""}
+              <div class="ctas">
+                ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : ""}
+                ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : ""}
+                ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : ""}
+              </div>
             </div>
           </div>
         </div>
@@ -163,28 +174,38 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>${safe.token_name || "Preview"}</title>
         <style>
-          *{box-sizing:border-box}
-          body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#fff;color:#0f172a;display:flex;align-items:center;justify-content:center;padding:20px}
-          .wrap{width:100%;max-width:900px;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(2,6,23,0.08);background:#fff}
-          .content{display:grid;grid-template-columns:180px 1fr;gap:24px;padding:28px;align-items:center}
-          .icon{width:140px;height:140px;border-radius:12px;background:${safe.logo_url ? `url('${safe.logo_url}') center/cover no-repeat` : "#f1f5f9"};background-size:cover;border:1px solid #e6e6e6}
-          .right h1{margin:0;font-size:28px;color:#0f172a}
-          .slogan{color:#334155;margin-top:6px}
-          .contract{margin-top:10px;color:#475569;font-size:13px;word-break:break-all}
-          .ctas{margin-top:12px}
-          .btn{display:inline-block;padding:6px 12px;border-radius:8px;border:1px solid #cbd5e1;color:#0f172a;text-decoration:none;margin-right:8px}
-          @media (max-width:700px){.content{grid-template-columns:1fr; text-align:center}}
+          *{margin:0;padding:0;box-sizing:border-box}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;background:#ffffff;color:#0f172a;display:flex;align-items:center;padding:24px}
+          .container{width:100%;max-width:1024px;margin:0 auto}
+          .grid{display:grid;grid-template-columns:200px 1fr;gap:40px;align-items:center}
+          .icon-wrapper{display:flex;justify-content:center}
+          .icon{width:192px;height:192px;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(15,23,42,0.08);background:${safe.logo_url ? `url('${safe.logo_url}')` : '#f1f5f9'};background-size:cover;background-position:center}
+          .content{display:flex;flex-direction:column;gap:16px}
+          h1{font-size:48px;font-weight:700}
+          .ticker{color:#64748b}
+          .slogan{font-size:18px;color:#334155}
+          .contract{display:inline-block;padding:8px 12px;background:#f1f5f9;border-radius:6px;font-size:14px;font-family:monospace;word-break:break-all;max-width:100%}
+          .ctas{display:flex;flex-wrap:wrap;gap:12px}
+          .btn{display:inline-block;padding:8px 16px;border:1px solid #cbd5e1;color:#0f172a;text-decoration:none;border-radius:8px;transition:background 0.2s}
+          .btn:hover{background:#f1f5f9}
+          @media(max-width:700px){.grid{grid-template-columns:1fr;text-align:center}.icon-wrapper{justify-content:center}}
         </style>
       </head>
       <body>
-        <div class="wrap">
-          <div class="content">
-            <div class="icon" role="img" aria-label="${safe.token_name} icon"></div>
-            <div class="right">
+        <div class="container">
+          <div class="grid">
+            <div class="icon-wrapper">
+              <div class="icon"></div>
+            </div>
+            <div class="content">
               <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
               ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
               ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
-              <div class="ctas">${socialLinksHtml}</div>
+              <div class="ctas">
+                ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : ""}
+                ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : ""}
+                ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : ""}
+              </div>
             </div>
           </div>
         </div>
