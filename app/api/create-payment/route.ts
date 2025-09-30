@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
     const body: Partial<PaymentPayload> = await request.json().catch((err) => {
       console.error("JSON parse error:", err);
       throw new Error("Invalid JSON payload");
+  
     });
+
 
     console.log("Request body:", body);
 
