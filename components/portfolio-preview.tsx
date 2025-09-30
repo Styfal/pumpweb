@@ -8,7 +8,6 @@ interface PortfolioData {
   ticker: string
   contract_address: string
   slogan: string
-  description: string
   twitter_url: string
   telegram_url: string
   website_url: string
@@ -33,7 +32,6 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         ticker,
         contract_address,
         slogan,
-        description,
         twitter_url,
         telegram_url,
         website_url,
@@ -78,7 +76,6 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
                 <h1 class="token-name">${token_name}</h1>
                 ${ticker ? `<div class="ticker">$${ticker}</div>` : ""}
                 ${slogan ? `<p class="slogan">${slogan}</p>` : ""}
-                ${description ? `<div class="description">${description}</div>` : ""}
                 ${contract_address ? `<div class="contract"><strong>Contract:</strong> ${contract_address}</div>` : ""}
               </div>
 
@@ -123,7 +120,6 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
       .token-name { font-size: 2.5rem; margin-bottom: 10px; }
       .ticker { font-size: 1.2rem; color: #666; margin-bottom: 15px; }
       .slogan { font-size: 1.1rem; margin-bottom: 15px; font-style: italic; }
-      .description { font-size: 1rem; margin-bottom: 20px; line-height: 1.6; }
       .contract { font-size: 0.9rem; color: #888; word-break: break-all; margin-bottom: 20px; }
       .social-links { text-align: center; }
       .social-links h3 { margin-bottom: 15px; }

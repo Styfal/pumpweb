@@ -15,7 +15,6 @@ type PortfolioDoc = {
   ticker: string;
   contract_address: string;
   slogan: string;
-  description: string;
   twitter_url: string;
   telegram_url: string;
   website_url: string;
@@ -34,7 +33,7 @@ export default async function Page({ params }: { params: Promise<{ username: str
     {
       projection: {
         username: 1, token_name: 1, ticker: 1, contract_address: 1, slogan: 1,
-        description: 1, twitter_url: 1, telegram_url: 1, website_url: 1,
+        twitter_url: 1, telegram_url: 1, website_url: 1,
         template: 1, logo_url: 1, banner_url: 1,
       },
     }
@@ -47,7 +46,6 @@ export default async function Page({ params }: { params: Promise<{ username: str
     ticker: doc.ticker ?? "",
     contract_address: doc.contract_address ?? "",
     slogan: doc.slogan ?? "",
-    description: doc.description ?? "",
     logo_url: doc.logo_url ?? "",
     banner_url: doc.banner_url ?? "",
     twitter_url: doc.twitter_url ?? "",

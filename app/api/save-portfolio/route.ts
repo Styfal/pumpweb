@@ -13,7 +13,6 @@ const portfolioSchema = z.object({
   ticker: z.string().max(10).optional(),
   contract_address: z.string().optional(),
   slogan: z.string().max(100).optional(),
-  description: z.string().max(500).optional(),
   twitter_url: z.string().url().optional(),
   telegram_url: z.string().url().optional(),
   website_url: z.string().url().optional(),
