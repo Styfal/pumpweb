@@ -13,6 +13,33 @@ interface PaymentStatusProps {
   onComplete?: (portfolioUrl: string) => void;
 }
 
+/** Narrow helper types derived from what the UI actually uses */
+type PaymentState = "completed" | "failed" | "pending";
+
+interface PortfolioLite {
+  username: string;
+  token_name?: string;
+}
+
+interface PaymentSummary {
+  status: PaymentState;
+  amount: number;
+  currency: string;
+  verified_at?: string | number | Date;
+  portfolio?: PortfolioLite | null;
+}
+
+/** Minimal shape implied by your UI (compatible with PaymentStatus) */
+type StatusShape = {
+  payment: PaymentSummary;
+  portfolio?: PortfolioLite | null;
+};
+
+/** Safe accessors (avoid casting) */
+function getUsernameFromStatus(s: StatusShape): string | null {
+  return s.portfolio?.username ?? s.payment.portfolio?.username ?? null;
+}
+
 export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusProps) {
   const [status, setStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,14 +71,10 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
   useEffect(() => {
     if (!status || redirected.current) return;
 
-    const username =
-      // prefer top-level portfolio (if your status API returns it there)
-      (status as any).portfolio?.username ??
-      // or nested on payment (if your service nests it)
-      (status as any).payment?.portfolio?.username ??
-      null;
+    const s = status as unknown as StatusShape;
+    const username = getUsernameFromStatus(s);
 
-    if (status.payment.status === "completed" && username) {
+    if (s.payment.status === "completed" && username) {
       const url = `/portfolio/${username}`;
       redirected.current = true;
 
@@ -97,9 +120,10 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
     );
   }
 
-  const { payment } = status as any;
-  const fallbackUsername =
-    (status as any).portfolio?.username ?? (status as any).payment?.portfolio?.username ?? null;
+  // Treat `status` as the narrowed shape only for fields we actually use in the UI
+  const s = status as unknown as StatusShape;
+  const { payment } = s;
+  const fallbackUsername = getUsernameFromStatus(s);
   const fallbackUrl = fallbackUsername ? `/portfolio/${fallbackUsername}` : null;
 
   return (
@@ -115,7 +139,7 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
           {payment.status === "pending" && "Payment Pending"}
         </CardTitle>
 
-        {payment.portfolio && (
+        {payment.portfolio?.token_name && (
           <CardDescription>Portfolio for {payment.portfolio.token_name}</CardDescription>
         )}
       </CardHeader>
@@ -129,7 +153,7 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
             </span>
           </div>
 
-          {payment.portfolio && (
+          {payment.portfolio?.username && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Username:</span>
               <span className="font-medium">@{payment.portfolio.username}</span>
