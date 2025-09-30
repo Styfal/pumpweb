@@ -74,19 +74,19 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
           body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
           .bg-blur{position:fixed;inset:0;z-index:-2;background:${safe.banner_url ? `url('${safe.banner_url}')` : '#0f172a'};background-size:cover;background-position:center;filter:blur(12px);transform:scale(1.1)}
           .bg-overlay{position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.45)}
-          .container{display:flex;align-items:center;gap:32px;color:white}
-          .icon{width:160px;height:160px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);box-shadow:0 20px 40px rgba(0,0,0,0.3);flex-shrink:0;background:${safe.logo_url ? `url('${safe.logo_url}')` : '#0b1220'};background-size:cover;background-position:center}
-          .content{display:flex;flex-direction:column;gap:16px}
-          h1{font-size:40px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
+          .container{display:flex;align-items:center;gap:20px;color:white;max-width:100%}
+          .icon{width:120px;height:120px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);box-shadow:0 20px 40px rgba(0,0,0,0.3);flex-shrink:0;background:${safe.logo_url ? `url('${safe.logo_url}')` : '#0b1220'};background-size:cover;background-position:center}
+          .content{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1}
+          h1{font-size:28px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.2);word-wrap:break-word}
           .ticker{opacity:0.9}
-          .slogan{font-size:18px;color:rgba(255,255,255,0.9)}
-          .contract{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s}
+          .slogan{font-size:14px;color:rgba(255,255,255,0.9)}
+          .contract{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background 0.2s;max-width:100%}
           .contract:hover{background:rgba(0,0,0,0.7)}
-          .contract span{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .ctas{display:flex;flex-wrap:wrap;gap:12px}
-          .btn{display:inline-block;padding:8px 16px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
+          .contract span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .ctas{display:flex;flex-wrap:wrap;gap:8px}
+          .btn{display:inline-block;padding:6px 12px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
           .btn:hover{background:#059669}
-          @media(max-width:768px){.container{flex-direction:column;text-align:center}.icon{width:128px;height:128px}}
+          @media(max-width:600px){.container{flex-direction:column;text-align:center}.icon{width:128px;height:128px}}
         </style>
       </head>
       <body>
