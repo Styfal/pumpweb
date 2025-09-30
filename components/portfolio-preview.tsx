@@ -20,138 +20,194 @@ interface PortfolioPreviewProps {
   data: PortfolioData
 }
 
+function escapeHtml(s: string | null | undefined) {
+  if (!s) return ""
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
 export function PortfolioPreview({ data }: PortfolioPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     if (!iframeRef.current) return
 
-    const generatePreviewHTML = () => {
-      const {
-        token_name,
-        ticker,
-        contract_address,
-        slogan,
-        twitter_url,
-        telegram_url,
-        website_url,
-        logo_url,
-        banner_url,
-        template,
-      } = data
+    const {
+      token_name,
+      ticker,
+      contract_address,
+      slogan,
+      twitter_url,
+      telegram_url,
+      website_url,
+      logo_url,
+      banner_url,
+      template,
+    } = data
 
-      if (!token_name) {
-        return '<div style="padding: 20px; text-align: center; color: #666;">Fill in the form to see preview</div>'
-      }
+    const safe = {
+      token_name: escapeHtml(token_name),
+      ticker: escapeHtml(ticker),
+      contract_address: escapeHtml(contract_address),
+      slogan: escapeHtml(slogan),
+      twitter_url: escapeHtml(twitter_url),
+      telegram_url: escapeHtml(telegram_url),
+      website_url: escapeHtml(website_url),
+      logo_url: escapeHtml(logo_url),
+      banner_url: escapeHtml(banner_url),
+    }
 
-      const twitterLink = twitter_url
-        ? `<a href="${twitter_url}" target="_blank" style="color: #1da1f2; text-decoration: none; margin-right: 15px;">Twitter</a>`
-        : ""
-      const telegramLink = telegram_url
-        ? `<a href="${telegram_url}" target="_blank" style="color: #0088cc; text-decoration: none; margin-right: 15px;">Telegram</a>`
-        : ""
-      const websiteLink = website_url
-        ? `<a href="${website_url}" target="_blank" style="color: #007bff; text-decoration: none;">Website</a>`
-        : ""
+    const socialLinksHtml = [
+      safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : "",
+      safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : "",
+      safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : "",
+    ].join(" ")
 
-      // Template-specific styles
-      const templateStyles = getTemplateStyles(template)
-
+    const modernHtml = () => {
       return `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${token_name}</title>
-          <style>${templateStyles}</style>
-        </head>
-        <body>
-          <div class="container">
-            ${banner_url ? `<div class="header-image"><img src="${banner_url}" alt="Header" /></div>` : ""}
-            
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>${safe.token_name || "Preview"}</title>
+        <style>
+          :root{--bg:#0f172a;--glass:rgba(0,0,0,0.45);--accent:#10b981}
+          *{box-sizing:border-box}
+          html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+          body{background:var(--bg);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px}
+          .wrap{width:100%;max-width:900px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+          .hero{position:relative;padding:48px 36px;text-align:center}
+          .blur{position:absolute;inset:0;background:${safe.banner_url ? `url('${safe.banner_url}') center/cover no-repeat` : "#0f172a"};filter:blur(12px) scale(1.05);opacity:0.7}
+          .overlay{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.45))}
+          .content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px}
+          .icon{width:120px;height:120px;border-radius:18px;border:4px solid rgba(255,255,255,0.9);background:${safe.logo_url ? `url('${safe.logo_url}') center/cover no-repeat` : "#071025"}}
+          h1{font-size:34px;margin:0}
+          .ticker{opacity:0.9}
+          .slogan{color:rgba(255,255,255,0.9);font-size:16px;margin:0}
+          .contract{margin-top:8px;background:rgba(0,0,0,0.6);display:inline-block;padding:8px 12px;border-radius:10px;font-size:13px}
+          .ctas{margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+          .btn{display:inline-block;padding:8px 14px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+          @media (max-width:600px){.icon{width:84px;height:84px}.hero{padding:28px}}
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <div class="hero">
+            <div class="blur"></div>
+            <div class="overlay"></div>
             <div class="content">
-              <div class="token-info">
-                ${logo_url ? `<div class="token-icon"><img src="${logo_url}" alt="${token_name} Icon" /></div>` : ""}
-                <h1 class="token-name">${token_name}</h1>
-                ${ticker ? `<div class="ticker">$${ticker}</div>` : ""}
-                ${slogan ? `<p class="slogan">${slogan}</p>` : ""}
-                ${contract_address ? `<div class="contract"><strong>Contract:</strong> ${contract_address}</div>` : ""}
-              </div>
-
-              ${
-                twitterLink || telegramLink || websiteLink
-                  ? `
-                <div class="social-links">
-                  <h3>Follow Us</h3>
-                  ${twitterLink}
-                  ${telegramLink}
-                  ${websiteLink}
-                </div>
-              `
-                  : ""
-              }
+              <div class="icon" role="img" aria-label="${safe.token_name} icon"></div>
+              <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
+              ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
+              ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
+              <div class="ctas">${socialLinksHtml}</div>
             </div>
           </div>
-        </body>
-        </html>
+        </div>
+      </body>
+      </html>
       `
     }
+
+    const classicHtml = () => {
+      return `
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>${safe.token_name || "Preview"}</title>
+        <style>
+          *{box-sizing:border-box}
+          body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#081225;color:#fff;display:flex;align-items:center;justify-content:center;padding:20px}
+          .wrap{width:100%;max-width:1100px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+          .hero{display:grid;grid-template-columns:220px 1fr;gap:30px;align-items:center;padding:28px;background:${safe.banner_url ? `url('${safe.banner_url}') center/cover no-repeat` : "#081225"};background-size:cover}
+          .left{display:flex;justify-content:center}
+          .icon{width:160px;height:160px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);background:${safe.logo_url ? `url('${safe.logo_url}') center/cover no-repeat` : "#071025"}}
+          .right h1{margin:0;font-size:32px}
+          .slogan{color:rgba(255,255,255,0.9);margin-top:6px}
+          .contract{margin-top:8px;background:rgba(0,0,0,0.5);display:inline-block;padding:8px 12px;border-radius:10px;font-size:13px}
+          .ctas{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+          .btn{display:inline-block;padding:8px 14px;border-radius:8px;background:#10b981;color:#fff;text-decoration:none;font-weight:600}
+          @media (max-width:800px){.hero{grid-template-columns:1fr; text-align:center}.left{order:0}}
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <div class="hero">
+            <div class="left"><div class="icon" role="img" aria-label="${safe.token_name} icon"></div></div>
+            <div class="right">
+              <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
+              ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
+              ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
+              <div class="ctas">${socialLinksHtml}</div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+      `
+    }
+
+    const minimalHtml = () => {
+      return `
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>${safe.token_name || "Preview"}</title>
+        <style>
+          *{box-sizing:border-box}
+          body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#fff;color:#0f172a;display:flex;align-items:center;justify-content:center;padding:20px}
+          .wrap{width:100%;max-width:900px;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(2,6,23,0.08);background:#fff}
+          .content{display:grid;grid-template-columns:180px 1fr;gap:24px;padding:28px;align-items:center}
+          .icon{width:140px;height:140px;border-radius:12px;background:${safe.logo_url ? `url('${safe.logo_url}') center/cover no-repeat` : "#f1f5f9"};background-size:cover;border:1px solid #e6e6e6}
+          .right h1{margin:0;font-size:28px;color:#0f172a}
+          .slogan{color:#334155;margin-top:6px}
+          .contract{margin-top:10px;color:#475569;font-size:13px;word-break:break-all}
+          .ctas{margin-top:12px}
+          .btn{display:inline-block;padding:6px 12px;border-radius:8px;border:1px solid #cbd5e1;color:#0f172a;text-decoration:none;margin-right:8px}
+          @media (max-width:700px){.content{grid-template-columns:1fr; text-align:center}}
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <div class="content">
+            <div class="icon" role="img" aria-label="${safe.token_name} icon"></div>
+            <div class="right">
+              <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
+              ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
+              ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
+              <div class="ctas">${socialLinksHtml}</div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+      `
+    }
+
+    const html = (template || "modern").toLowerCase() === "classic"
+      ? classicHtml()
+      : (template || "modern").toLowerCase() === "minimal"
+      ? minimalHtml()
+      : modernHtml()
 
     const iframe = iframeRef.current
     const doc = iframe.contentDocument || iframe.contentWindow?.document
 
     if (doc) {
       doc.open()
-      doc.write(generatePreviewHTML())
+      doc.write(html)
       doc.close()
     }
   }, [data])
-
-  const getTemplateStyles = (template: string): string => {
-    const baseStyles = `
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; }
-      .container { max-width: 800px; margin: 0 auto; }
-      .header-image img { width: 100%; height: 200px; object-fit: cover; }
-      .content { padding: 20px; }
-      .token-info { text-align: center; margin-bottom: 30px; }
-      .token-icon img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; }
-      .token-name { font-size: 2.5rem; margin-bottom: 10px; }
-      .ticker { font-size: 1.2rem; color: #666; margin-bottom: 15px; }
-      .slogan { font-size: 1.1rem; margin-bottom: 15px; font-style: italic; }
-      .contract { font-size: 0.9rem; color: #888; word-break: break-all; margin-bottom: 20px; }
-      .social-links { text-align: center; }
-      .social-links h3 { margin-bottom: 15px; }
-    `
-
-    switch (template) {
-      case "modern":
-        return (
-          baseStyles +
-          `
-          body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; }
-          .container { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; margin: 20px; }
-          .token-name { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-          .content { background: white; color: #333; border-radius: 15px; }
-          .social-links a { background: #667eea; color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; margin: 0 5px; display: inline-block; }
-        `
-        )
-      case "classic":
-        return (
-          baseStyles +
-          `
-          body { background: #f5f5f5; color: #333; }
-          .container { background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 20px; }
-          .token-name { color: #2c3e50; font-family: Georgia, serif; }
-          .content { border-top: 3px solid #2c3e50; }
-          .social-links a { color: #3498db; text-decoration: none; padding: 8px 16px; border: 1px solid #3498db; margin: 0 5px; display: inline-block; }
-        `
-        )
-      default:
-        return baseStyles
-    }
-  }
 
   return (
     <div className="w-full h-[500px] border border-border rounded-lg overflow-hidden">

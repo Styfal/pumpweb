@@ -72,6 +72,12 @@ const portfolioSchema = z.object({
     .optional()
     .or(z.literal("")),
   website_url: z.string().refine(val => isValidUrl(val), "Invalid website URL").optional().or(z.literal("")),
+  discord_url: z
+    .string()
+    .refine(val => isValidUrl(val), "Invalid Discord URL")
+    .refine(val => !val || val.includes("discord") || val.includes("discord.gg"), "Must be a valid Discord link")
+    .optional()
+    .or(z.literal("")),
   template: z.enum(["modern", "classic"], { errorMap: () => ({ message: "Please select a valid template" }) }),
   logo_url: z.string().refine(val => validateImageSize(val, 5), "Logo image must be smaller than 5MB").nullable().optional(),
   banner_url: z.string().refine(val => validateImageSize(val, 10), "Banner image must be smaller than 10MB").nullable().optional(),
@@ -86,6 +92,7 @@ export interface PortfolioData {
   twitter_url: string
   telegram_url: string
   website_url: string
+  discord_url?: string
   template: string
   logo_url: string | null
   banner_url: string | null
@@ -109,6 +116,7 @@ export function PortfolioBuilder() {
     twitter_url: "",
     telegram_url: "",
     website_url: "",
+    discord_url: "",
     template: "modern",
     logo_url: null,
     banner_url: null,
@@ -193,11 +201,12 @@ export function PortfolioBuilder() {
     }
 
     try {
-      const portfolioData: PortfolioFormData = {
+      const portfolioData: any = {
         ...formData,
         username: formData.username || generateUsername(formData.token_name),
         logo_url: formData.logo_url ?? undefined,
         banner_url: formData.banner_url ?? undefined,
+        discord_url: formData.discord_url ?? undefined,
       }
 
       const response = await PaymentService.createPayment(portfolioData, 50, "USD")
@@ -281,6 +290,16 @@ export function PortfolioBuilder() {
             </a>
           </Button>
 
+          {formData.discord_url ? (
+            <div>
+              <Button asChild variant="outline" className="mt-2">
+                <a href={formData.discord_url} target="_blank" rel="noopener noreferrer">
+                  Manage Portfolio
+                </a>
+              </Button>
+            </div>
+          ) : null}
+
           <div className="text-sm text-[#bbb]">
             <p>
               Portfolio URL:{" "}
@@ -307,6 +326,7 @@ export function PortfolioBuilder() {
                 twitter_url: "",
                 telegram_url: "",
                 website_url: "",
+                discord_url: "",
                 template: "modern",
                 logo_url: null,
                 banner_url: null,
@@ -429,6 +449,17 @@ export function PortfolioBuilder() {
                   className={`bg-[#2a2a2a] border ${validationErrors.website_url ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
                 />
                 {validationErrors.website_url && <p className="text-sm text-red-500 mt-1">{validationErrors.website_url}</p>}
+              </div>
+
+              <div>
+                <Label className="text-[#e0e0e0]">Discord / Manage Portfolio Link</Label>
+                <Input
+                  value={formData.discord_url}
+                  onChange={e => handleInputChange("discord_url" as keyof PortfolioData, e.target.value)}
+                  placeholder="https://discord.gg/your-invite or https://discord.com/..."
+                  className={`bg-[#2a2a2a] border ${validationErrors.discord_url ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
+                />
+                {validationErrors.discord_url && <p className="text-sm text-red-500 mt-1">{validationErrors.discord_url}</p>}
               </div>
 
               <div>
