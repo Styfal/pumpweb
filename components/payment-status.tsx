@@ -40,22 +40,25 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
     };
   }, [paymentId]);
 
-  // handle redirect when completed
+  // handle redirect when completed — build URL from DB username instead of trusting API url
   useEffect(() => {
-    if (!status) return;
+    if (!status || redirected.current) return;
 
-    // NOTE: if your PaymentService returns portfolio at the top level instead of nested,
-    // change the next two lines to:
-    // const url = status.portfolio?.url;
-    const url = status.payment.portfolio?.url;
+    const username =
+      // prefer top-level portfolio (if your status API returns it there)
+      (status as any).portfolio?.username ??
+      // or nested on payment (if your service nests it)
+      (status as any).payment?.portfolio?.username ??
+      null;
 
-    if (status.payment.status === "completed" && url && !redirected.current) {
+    if (status.payment.status === "completed" && username) {
+      const url = `/portfolio/${username}`;
       redirected.current = true;
 
-      // call user callback first, if provided
+      // optional callback first
       onComplete?.(url);
 
-      // small delay for UI to show "Completed!"
+      // small delay to let "Completed!" show
       timerRef.current = setTimeout(() => {
         router.push(url);
       }, 1500);
@@ -94,7 +97,10 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
     );
   }
 
-  const { payment } = status;
+  const { payment } = status as any;
+  const fallbackUsername =
+    (status as any).portfolio?.username ?? (status as any).payment?.portfolio?.username ?? null;
+  const fallbackUrl = fallbackUsername ? `/portfolio/${fallbackUsername}` : null;
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -140,9 +146,10 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
           )}
         </div>
 
-        {payment.status === "completed" && payment.portfolio?.url && (
+        {/* Fallback button builds URL from username too */}
+        {payment.status === "completed" && fallbackUrl && (
           <Button asChild className="w-full">
-            <Link href={payment.portfolio.url} className="flex items-center gap-2">
+            <Link href={fallbackUrl} className="flex items-center gap-2">
               View Your Portfolio
               <ExternalLink className="h-4 w-4" />
             </Link>

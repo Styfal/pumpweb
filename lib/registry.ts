@@ -31,61 +31,28 @@ a { color: inherit; text-decoration: none; }
 .contract { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
 `;
 
-/* -------------------- MODERN (centered) -------------------- */
+/* -------------------- MODERN (horizontal side-by-side) -------------------- */
 const MODERN_HTML = `
 {{#BANNER_URL}}<div class="bg-blur" style="background-image:url('{{BANNER_URL}}')"></div>{{/BANNER_URL}}
 <div class="bg-overlay"></div>
 
 <main class="main">
-  <div class="container" style="text-align:center">
+  <div class="container modern">
     <div class="icon" style="{{#LOGO_URL}}background-image:url('{{LOGO_URL}}'){{/LOGO_URL}}"></div>
-    <h1 style="font-size:42px; margin:18px 0 0 0; font-weight:900">
-      {{TOKEN_NAME}} {{#TICKER}}<span style="opacity:.9">({{TICKER}})</span>{{/TICKER}}
-    </h1>
-    {{#SLOGAN}}<div class="subtitle">{{SLOGAN}}</div>{{/SLOGAN}}
-    {{#DESCRIPTION}}<div class="desc">{{DESCRIPTION}}</div>{{/DESCRIPTION}}
-
-    {{#CONTRACT_ADDRESS}}
-      <div class="badge contract copy" onclick="navigator.clipboard && navigator.clipboard.writeText('{{CONTRACT_ADDRESS}}')">
-        <span>Contract:</span><span>{{CONTRACT_ADDRESS}}</span><span>📋</span>
-      </div>
-    {{/CONTRACT_ADDRESS}}
-
-    <div class="ctas">
-      {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
-      {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
-      {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
-    </div>
-  </div>
-</main>
-`;
-const MODERN_CSS = `${BASE_CSS}`;
-
-/* -------------------- CLASSIC (side-by-side) -------------------- */
-const CLASSIC_HTML = `
-{{#BANNER_URL}}<div class="bg-blur" style="background-image:url('{{BANNER_URL}}')"></div>{{/BANNER_URL}}
-<div class="bg-overlay"></div>
-
-<main class="main">
-  <div class="container" style="display:grid; grid-template-columns: 220px 1fr; gap: 40px; align-items:center;">
-    <div style="justify-self:center">
-      <div class="icon" style="{{#LOGO_URL}}background-image:url('{{LOGO_URL}}'){{/LOGO_URL}}"></div>
-    </div>
-    <div>
-      <h1 style="font-size:42px; margin:0; font-weight:900">
-        {{TOKEN_NAME}} {{#TICKER}}<span style="opacity:.9">({{TICKER}})</span>{{/TICKER}}
+    <div class="content">
+      <h1 class="title">
+        {{TOKEN_NAME}} {{#TICKER}}<span class="ticker">({{TICKER}})</span>{{/TICKER}}
       </h1>
       {{#SLOGAN}}<div class="subtitle">{{SLOGAN}}</div>{{/SLOGAN}}
-      {{#DESCRIPTION}}<div class="desc">{{DESCRIPTION}}</div>{{/DESCRIPTION}}
 
       {{#CONTRACT_ADDRESS}}
-        <div class="badge contract copy" onclick="navigator.clipboard && navigator.clipboard.writeText('{{CONTRACT_ADDRESS}}')" style="margin-top:10px">
-          <span>Contract:</span><span>{{CONTRACT_ADDRESS}}</span><span>📋</span>
+        <div class="badge contract copy" onclick="navigator.clipboard && navigator.clipboard.writeText('{{CONTRACT_ADDRESS}}')">
+          <span>{{CONTRACT_ADDRESS}}</span><span>📋</span>
         </div>
       {{/CONTRACT_ADDRESS}}
 
-      <div class="ctas" style="margin-top:14px">
-        {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
+      <div class="ctas">
+        {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">{{#TICKER}}Buy {{TICKER}}{{/TICKER}}{{^TICKER}}Website{{/TICKER}}</a>{{/WEBSITE_URL}}
         {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
         {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
       </div>
@@ -93,6 +60,56 @@ const CLASSIC_HTML = `
   </div>
 </main>
 `;
+
+const MODERN_CSS = `
+${BASE_CSS}
+/* layout */
+.container.modern { display:flex; gap:40px; align-items:center; }
+.container.modern .content { flex:1; min-width:0; }
+.title { font-size:42px; margin:0; font-weight:900; line-height:1.15; }
+.ticker { opacity:.9 }
+/* contract pill */
+.badge.contract { margin-top:12px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+/* buttons wrap neatly */
+.ctas { align-items:center }
+/* responsive: stack on mobile */
+@media (max-width: 820px) {
+  .container.modern { flex-direction:column; text-align:center; }
+  .badge.contract { margin-left:auto; margin-right:auto; }
+  .ctas { justify-content:center }
+}
+`;
+
+/* -------------------- CLASSIC (vertical, icon on top) -------------------- */
+const CLASSIC_HTML = `
+{{#BANNER_URL}}<div class="bg-blur" style="background-image:url('{{BANNER_URL}}')"></div>{{/BANNER_URL}}
+<div class="bg-overlay"></div>
+
+<main class="main">
+  <div class="container" style="text-align:center">
+    <div class="icon" style="margin:0 auto; {{#LOGO_URL}}background-image:url('{{LOGO_URL}}'){{/LOGO_URL}}"></div>
+    <h1 style="font-size:42px; margin:18px 0 0 0; font-weight:900">
+      {{TOKEN_NAME}} {{#TICKER}}<span style="opacity:.9">({{TICKER}})</span>{{/TICKER}}
+    </h1>
+    {{#SLOGAN}}<div class="subtitle">{{SLOGAN}}</div>{{/SLOGAN}}
+
+    {{#CONTRACT_ADDRESS}}
+      <div class="badge contract copy" 
+           onclick="navigator.clipboard && navigator.clipboard.writeText('{{CONTRACT_ADDRESS}}')" 
+           style="margin-top:12px; display:inline-flex;">
+        <span>{{CONTRACT_ADDRESS}}</span><span>📋</span>
+      </div>
+    {{/CONTRACT_ADDRESS}}
+
+    <div class="ctas" style="justify-content:center; margin-top:16px">
+      {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
+      {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
+      {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
+    </div>
+  </div>
+</main>
+`;
+
 const CLASSIC_CSS = `${BASE_CSS}`;
 
 /* -------------------- MINIMAL (white) -------------------- */
@@ -108,7 +125,6 @@ const MINIMAL_HTML = `
           {{TOKEN_NAME}} {{#TICKER}}<span style="color:#6b7280">({{TICKER}})</span>{{/TICKER}}
         </h1>
         {{#SLOGAN}}<div style="color:#1f2937; font-size:18px; margin:6px 0 0 0">{{SLOGAN}}</div>{{/SLOGAN}}
-        {{#DESCRIPTION}}<div style="color:#334155; margin-top:6px">{{DESCRIPTION}}</div>{{/DESCRIPTION}}
         {{#CONTRACT_ADDRESS}}
           <code style="display:inline-block; padding:.25rem .5rem; background:#f3f4f6; border-radius:.375rem; margin-top:10px">{{CONTRACT_ADDRESS}}</code>
         {{/CONTRACT_ADDRESS}}
@@ -122,6 +138,7 @@ const MINIMAL_HTML = `
   </div>
 </main>
 `;
+
 const MINIMAL_CSS = `
 *{box-sizing:border-box}body,html,.portfolio-container{margin:0;padding:0}a{text-decoration:none}
 .btn{display:inline-block;padding:.5rem .75rem;border-radius:.5rem;color:#111}
