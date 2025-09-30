@@ -2,12 +2,11 @@
 
 import type React from "react"
 import { useState, useCallback } from "react"
-import { z } from "zod"
+import { z, ZodTypeAny } from "zod"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -131,7 +130,8 @@ export function PortfolioBuilder() {
 
   const validateField = useCallback((field: keyof PortfolioData, value: PortfolioData[keyof PortfolioData]) => {
     try {
-      const fieldSchema = (portfolioSchema.shape as any)[field]
+      const shape = portfolioSchema.shape as Record<string, ZodTypeAny>
+      const fieldSchema = shape[String(field)]
       if (fieldSchema) {
         fieldSchema.parse(value)
         setValidationErrors(prev => ({ ...prev, [field]: undefined }))
@@ -201,12 +201,11 @@ export function PortfolioBuilder() {
     }
 
     try {
-      const portfolioData: any = {
+      const portfolioData: PortfolioFormData = {
         ...formData,
         username: formData.username || generateUsername(formData.token_name),
         logo_url: formData.logo_url ?? undefined,
         banner_url: formData.banner_url ?? undefined,
-        discord_url: formData.discord_url ?? undefined,
       }
 
       const response = await PaymentService.createPayment(portfolioData, 50, "USD")
