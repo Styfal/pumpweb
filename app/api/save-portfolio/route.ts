@@ -11,12 +11,13 @@ const portfolioSchema = z.object({
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9-]+$/),
   token_name: z.string().min(1).max(50),
   ticker: z.string().max(10).optional(),
+  buy_link: z.string().url().max(80), // Confirm the length for Zod Validation
   contract_address: z.string().optional(),
   slogan: z.string().max(100).optional(),
   twitter_url: z.string().url().optional(),
   telegram_url: z.string().url().optional(),
   website_url: z.string().url().optional(),
-  template: z.enum(["modern", "classic"]),
+  template: z.enum(["modern", "classic", "minimal"]),
   logo_url: z.string().nullable().optional(),
   banner_url: z.string().nullable().optional(),
   payment_id: z.string().optional(), // Will be used for webhook matching
@@ -45,10 +46,10 @@ export async function POST(request: NextRequest) {
     // Check for existing username
     const existing = await db
       .collection("portfolios")
-      .findOne({ username: data.username });
+      .findOne({ username: data.username, is_published: true });
     if (existing) {
       return NextResponse.json(
-        { success: false, error: "Username already exists" },
+        { success: false, error: "Username/Domain Name already exists" },
         { status: 409 }
       );
     }

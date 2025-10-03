@@ -1,4 +1,7 @@
 // app/api/generate-portfolio/route.tsx
+// This is a legacy code so I don't gotta do shit here. 
+
+
 import { type NextRequest, NextResponse } from "next/server"
 
 

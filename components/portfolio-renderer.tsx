@@ -3,6 +3,7 @@
 export type Portfolio = {
   token_name: string;
   ticker: string;
+  buy_link: string;
   contract_address: string;
   slogan: string;
   logo_url: string;
@@ -30,6 +31,7 @@ function renderTemplate(htmlTemplate: string, cssTemplate: string, data: Record<
     "BANNER_URL",
     "TOKEN_NAME",
     "TICKER",
+    "BUY_LINK",
     "SLOGAN",
     "CONTRACT_ADDRESS",
     "TWITTER_URL",
@@ -73,6 +75,7 @@ export function PortfolioRenderer({ portfolio, template }: Props) {
   const data: Record<string, string> = {
     TOKEN_NAME: portfolio.token_name || "",
     TICKER: portfolio.ticker || "",
+    BUY_LINK: portfolio.buy_link || "",
     CONTRACT_ADDRESS: portfolio.contract_address || "",
     SLOGAN: portfolio.slogan || "",
     LOGO_URL: portfolio.logo_url || "",

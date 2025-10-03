@@ -44,9 +44,9 @@ const isValidUrl = (url: string): boolean => {
 const portfolioSchema = z.object({
   username: z
     .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username must be at most 30 characters")
-    .regex(/^[a-zA-Z0-9-]+$/, "Username can only contain letters, numbers, and hyphens")
+    .min(3, "Domain name must be at least 3 characters")
+    .max(30, "Domain name must be at most 30 characters")
+    .regex(/^[a-zA-Z0-9-]+$/, "Domain can only contain letters, numbers, and hyphens")
     .optional()
     .or(z.literal("")),
   token_name: z.string().min(1, "Token name is required").max(15, "Token name must be at most 50 characters"),
@@ -56,6 +56,12 @@ const portfolioSchema = z.object({
     .regex(/^[A-Z0-9]*$/, "Ticker should only contain uppercase letters and numbers")
     .optional()
     .or(z.literal("")),
+  buy_link: z
+    .string()
+    .min(1, "Buy link is required")
+    .max(80, "Buy link must below 80 characters")
+    .refine(val => isValidUrl(val), "Buy link must be a valid URL")
+    .refine(val => val.includes("https://swap.pump.fun/"), "Buy link must be a valid pump.fun swap URL"),
   contract_address: z.string().max(150, "Contract address must be valid").optional().or(z.literal("")),
   slogan: z.string().max(100, "Slogan must be at most 100 characters").optional().or(z.literal("")),
   twitter_url: z
@@ -86,6 +92,7 @@ export interface PortfolioData {
   username: string
   token_name: string
   ticker: string
+  buy_link: string
   contract_address: string
   slogan: string
   twitter_url: string
@@ -111,6 +118,7 @@ export function PortfolioBuilder() {
     username: "",
     token_name: "",
     ticker: "",
+    buy_link: "",
     contract_address: "",
     slogan: "",
     twitter_url: "",
@@ -255,7 +263,7 @@ export function PortfolioBuilder() {
     [formData, paymentId]
   )
 
-  const isFormValid = formData.token_name.trim() !== "" && Object.values(validationErrors).every(v => !v)
+  const isFormValid = formData.token_name.trim() !== "" && formData.buy_link.trim() !== "" && Object.values(validationErrors).every(v => !v)
 
   if (currentStep === "payment" && paymentId) {
     return (
@@ -321,6 +329,7 @@ export function PortfolioBuilder() {
                 username: "",
                 token_name: "",
                 ticker: "",
+                buy_link: "",
                 contract_address: "",
                 slogan: "",
                 twitter_url: "",
@@ -370,7 +379,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Username (3-30 chars, letters/numbers/hyphens only)</Label>
+                <Label className="text-[#e0e0e0]">Domain Name (3-30 chars, letters/numbers/hyphens only)</Label>
                 <Input
                   value={formData.username}
                   onChange={e => handleInputChange("username", e.target.value)}
@@ -389,6 +398,18 @@ export function PortfolioBuilder() {
                   className={`bg-[#2a2a2a] border ${validationErrors.ticker ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
                 />
                 {validationErrors.ticker && <p className="text-sm text-red-500 mt-1">{validationErrors.ticker}</p>}
+              </div>
+
+              <div>
+                <Label className="text-[#e0e0e0]">Buy Link * (pump.fun swap URL)</Label>
+                <Input
+                  value={formData.buy_link}
+                  onChange={e => handleInputChange("buy_link", e.target.value)}
+                  placeholder="https://swap.pump.fun/..."
+                  className={`bg-[#2a2a2a] border ${validationErrors.buy_link ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
+                  required
+                />
+                {validationErrors.buy_link && <p className="text-sm text-red-500 mt-1">{validationErrors.buy_link}</p>}
               </div>
 
               <div>

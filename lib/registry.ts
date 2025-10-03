@@ -52,6 +52,7 @@ const MODERN_HTML = `
       {{/CONTRACT_ADDRESS}}
 
       <div class="ctas">
+        {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Link</a>{{/BUY_LINK}}
         {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">{{#TICKER}}Buy {{TICKER}}{{/TICKER}}{{^TICKER}}Website{{/TICKER}}</a>{{/WEBSITE_URL}}
         {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
         {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
@@ -102,6 +103,7 @@ const CLASSIC_HTML = `
     {{/CONTRACT_ADDRESS}}
 
     <div class="ctas" style="justify-content:center; margin-top:16px">
+      {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Link</a>{{/BUY_LINK}}
       {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
       {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
       {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
@@ -129,6 +131,7 @@ const MINIMAL_HTML = `
           <code style="display:inline-block; padding:.25rem .5rem; background:#f3f4f6; border-radius:.375rem; margin-top:10px">{{CONTRACT_ADDRESS}}</code>
         {{/CONTRACT_ADDRESS}}
         <div style="display:flex; flex-wrap:wrap; gap:.5rem; margin-top:12px">
+          {{#BUY_LINK}}<a class="btn" style="border:1px solid #e5e7eb" href="{{BUY_LINK}}" target="_blank">Buy Link</a>{{/BUY_LINK}}
           {{#WEBSITE_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
           {{#TWITTER_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
           {{#TELEGRAM_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
