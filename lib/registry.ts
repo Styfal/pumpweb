@@ -51,7 +51,8 @@ const MODERN_HTML = `
       {{/CONTRACT_ADDRESS}}
 
       <div class="ctas">
-        {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
+        {{#BUY_LINK}}{{#TICKER}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{TICKER}}</a>{{/TICKER}}{{/BUY_LINK}}
+        {{#BUY_LINK}}{{^TICKER}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Coin</a>{{/TICKER}}{{/BUY_LINK}}
         {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
         {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
         {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
