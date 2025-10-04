@@ -21,7 +21,7 @@ export default function AboutPage() {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Premium Services</h2>
             <p className="text-muted-foreground leading-relaxed">
-              For those who want to go further, we offer a premium token page creation service starting from $200. If you're interested, please contact us on Telegram at @pxhuhhh.
+              For those who want to go further, we offer a premium token page creation service starting from $200. If you&apos;re interested, please contact us on Telegram at @pxhuhhh.
             </p>
           </section>
 
