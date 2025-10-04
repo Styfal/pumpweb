@@ -52,7 +52,8 @@ const MODERN_HTML = `
       {{/CONTRACT_ADDRESS}}
 
       <div class="ctas">
-        {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
+        {{#TICKER}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{TICKER}}</a>{{/TICKER}}
+        {{^TICKER}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Coin</a>{{/TICKER}}
         {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
         {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
         {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
@@ -103,6 +104,17 @@ ${BASE_CSS}
   .title { font-size: 42px; }
   .container.modern .icon { width: 180px; height: 180px; }
 }
+/* contract must wrap on small phones */
+@media (max-width: 480px) {
+  .badge.contract {
+    white-space: normal;        /* allow line-wrap */
+    word-break: break-all;      /* break long hex strings */
+    overflow-wrap: anywhere;    /* extra safety */
+    text-overflow: clip;        /* no ellipsis */
+    font-size: 15px;            /* keep readable */
+    max-width: 100%;
+  }
+}
 `
 
 /* -------------------- CLASSIC (vertical, icon on top) -------------------- */
@@ -127,7 +139,8 @@ const CLASSIC_HTML = `
     {{/CONTRACT_ADDRESS}}
 
     <div class="ctas" style="justify-content:center; margin-top:16px">
-      {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
+      {{#TICKER}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{TICKER}}</a>{{/TICKER}}
+      {{^TICKER}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Coin</a>{{/TICKER}}
       {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
       {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
       {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
@@ -136,30 +149,37 @@ const CLASSIC_HTML = `
 </main>
 `
 
-const CLASSIC_CSS = `${BASE_CSS}`
+const CLASSIC_CSS = `${BASE_CSS}
+@media (max-width: 480px){
+  .badge.contract{
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+}
+`
 
-/* -------------------- MINIMAL (white) -------------------- */
+/* -------------------- MINIMAL (white, same structure as modern) -------------------- */
 const MINIMAL_HTML = `
-<main style="min-height:100vh; display:flex; align-items:center; color:#111; background:#fff">
-  <div class="container" style="max-width:1000px">
-    <div style="display:grid; grid-template-columns: 180px 1fr; gap: 28px; align-items:center;">
-      <div style="justify-self:center">
-        <div style="width:160px; height:160px; border-radius:16px; border:1px solid #e5e7eb; background:#f1f5f9 center/cover no-repeat; {{#LOGO_URL}}background-image:url('{{LOGO_URL}}'){{/LOGO_URL}}"></div>
-      </div>
-      <div>
-        <h1 style="font-size:38px; margin:0 0 4px 0; font-weight:800">
-          {{TOKEN_NAME}} {{#TICKER}}<span style="color:#6b7280">({{TICKER}})</span>{{/TICKER}}
-        </h1>
-        {{#SLOGAN}}<div style="color:#1f2937; font-size:18px; margin:6px 0 0 0">{{SLOGAN}}</div>{{/SLOGAN}}
-        {{#CONTRACT_ADDRESS}}
-          <code style="display:inline-block; padding:.25rem .5rem; background:#f3f4f6; border-radius:.375rem; margin-top:10px">{{CONTRACT_ADDRESS}}</code>
-        {{/CONTRACT_ADDRESS}}
-        <div style="display:flex; flex-wrap:wrap; gap:.5rem; margin-top:12px">
-          {{#BUY_LINK}}<a class="btn" style="border:1px solid #e5e7eb" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
-          {{#WEBSITE_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
-          {{#TWITTER_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
-          {{#TELEGRAM_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
-        </div>
+<main class="minimal-main">
+  <div class="container minimal">
+    <div class="icon minimal-icon" style="{{#LOGO_URL}}background-image:url('{{LOGO_URL}}'){{/LOGO_URL}}"></div>
+    <div class="content">
+      <h1 class="minimal-title">
+        {{TOKEN_NAME}} {{#TICKER}}<span class="minimal-ticker">({{TICKER}})</span>{{/TICKER}}
+      </h1>
+      {{#SLOGAN}}<div class="minimal-subtitle">{{SLOGAN}}</div>{{/SLOGAN}}
+
+      {{#CONTRACT_ADDRESS}}
+        <code class="minimal-contract copy" onclick="navigator.clipboard && navigator.clipboard.writeText('{{CONTRACT_ADDRESS}}')">{{CONTRACT_ADDRESS}}</code>
+      {{/CONTRACT_ADDRESS}}
+
+      <div class="ctas">
+        {{#TICKER}}<a class="btn minimal-btn" href="{{BUY_LINK}}" target="_blank">Buy {{TICKER}}</a>{{/TICKER}}
+        {{^TICKER}}<a class="btn minimal-btn" href="{{BUY_LINK}}" target="_blank">Buy Coin</a>{{/TICKER}}
+        {{#WEBSITE_URL}}<a class="btn minimal-btn" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
+        {{#TWITTER_URL}}<a class="btn minimal-btn" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
+        {{#TELEGRAM_URL}}<a class="btn minimal-btn" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
       </div>
     </div>
   </div>
@@ -167,8 +187,51 @@ const MINIMAL_HTML = `
 `
 
 const MINIMAL_CSS = `
-*{box-sizing:border-box}body,html,.portfolio-container{margin:0;padding:0}a{text-decoration:none}
+*{box-sizing:border-box}body,html,.portfolio-container{margin:0;padding:0}
+a{text-decoration:none}
+.minimal-main{min-height:100vh; display:flex; align-items:center; background:#fff; color:#111}
 .btn{display:inline-block;padding:.5rem .75rem;border-radius:.5rem;color:#111}
+.minimal-btn{border:1px solid #e5e7eb}
+.container.minimal{
+  display:flex;
+  gap:48px;
+  align-items:center;
+  justify-content:center;
+  max-width:1200px;
+  margin:0 auto;
+  padding:24px;
+}
+.icon.minimal-icon{
+  width:200px; height:200px; flex-shrink:0;
+  border-radius:16px; border:1px solid #e5e7eb;
+  background:#f1f5f9 center/cover no-repeat;
+}
+.container.minimal .content{flex:1; min-width:0; max-width:700px}
+.minimal-title{font-size:40px; margin:0; font-weight:800; line-height:1.2}
+.minimal-ticker{color:#6b7280}
+.minimal-subtitle{color:#1f2937; font-size:18px; margin-top:8px}
+.minimal-contract{
+  display:inline-block; margin-top:10px; padding:.25rem .5rem;
+  background:#f3f4f6; border-radius:.375rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+  white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+}
+/* stack & center on tablet/phone */
+@media (max-width: 820px){
+  .container.minimal{flex-direction:column; text-align:center}
+  .minimal-contract{margin-left:auto; margin-right:auto}
+  .ctas{justify-content:center}
+  .icon.minimal-icon{width:160px; height:160px}
+  .minimal-title{font-size:32px}
+}
+/* wrap contract on narrow phones */
+@media (max-width: 480px){
+  .minimal-contract{
+    white-space:normal;
+    word-break:break-all;
+    overflow-wrap:anywhere;
+    text-overflow:clip;
+  }
+}
 `
 
 export function getTemplateByName(name?: string): Template {

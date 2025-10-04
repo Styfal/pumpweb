@@ -138,7 +138,7 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
           .contract{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;max-width:fit-content}
           .contract:hover{background:rgba(0,0,0,0.7)}
           .contract span{max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .ctas{display:flex;flex-wrap:wrap;gap:12px}
+          .ctas{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
           .btn{display:inline-block;padding:8px 16px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
           .btn:hover{background:#059669}
           @media(max-width:800px){.grid{grid-template-columns:1fr;text-align:center}.icon-wrapper{justify-content:center}.contract{margin:0 auto}}
