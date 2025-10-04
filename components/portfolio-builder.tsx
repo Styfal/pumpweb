@@ -61,12 +61,12 @@ const portfolioSchema = z.object({
     .min(1, "Buy link is required")
     .max(80, "Buy link must below 80 characters")
     .refine(val => isValidUrl(val), "Buy link must be a valid URL")
-    .refine(val => val.includes("https://swap.pump.fun/"), "Buy link must be a valid pump.fun swap URL"),
+    .refine(val => val.includes("https://pump.fun/"), "Buy link must be a valid pump.fun swap URL"),
   contract_address: z.string().max(150, "Contract address must be valid").optional().or(z.literal("")),
   slogan: z.string().max(100, "Slogan must be at most 100 characters").optional().or(z.literal("")),
   twitter_url: z
     .string()
-    .refine(val => isValidUrl(val), "Invalid Twitter URL")
+    .refine(val => isValidUrl(val), "Invalid Twitter/X URL")
     .refine(val => !val || val.includes("twitter.com") || val.includes("x.com"), "Must be a valid Twitter/X URL")
     .optional()
     .or(z.literal("")),
@@ -440,7 +440,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Twitter URL</Label>
+                <Label className="text-[#e0e0e0]">Twitter/X URL</Label>
                 <Input
                   value={formData.twitter_url}
                   onChange={e => handleInputChange("twitter_url", e.target.value)}

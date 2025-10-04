@@ -1,10 +1,10 @@
 // /lib/templates/registry.ts
 export type Template = {
-  name: string;
-  display_name: string;
-  html_template: string;
-  css_template: string;
-};
+  name: string
+  display_name: string
+  html_template: string
+  css_template: string
+}
 
 // Helpers shared by all three templates
 const BASE_CSS = `
@@ -29,7 +29,7 @@ a { color: inherit; text-decoration: none; }
 .bg-overlay { position:fixed; inset:0; z-index:-1; background: rgba(0,0,0,.45); }
 .main { min-height: 100vh; display:flex; align-items:center; color:var(--fg); }
 .contract { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
-`;
+`
 
 /* -------------------- MODERN (horizontal side-by-side) -------------------- */
 const MODERN_HTML = `
@@ -52,34 +52,58 @@ const MODERN_HTML = `
       {{/CONTRACT_ADDRESS}}
 
       <div class="ctas">
-        {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Link</a>{{/BUY_LINK}}
-        {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">{{#TICKER}}Buy {{TICKER}}{{/TICKER}}{{^TICKER}}Website{{/TICKER}}</a>{{/WEBSITE_URL}}
+        {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
+        {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
         {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
         {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
       </div>
     </div>
   </div>
 </main>
-`;
+`
 
 const MODERN_CSS = `
 ${BASE_CSS}
 /* layout */
-.container.modern { display:flex; gap:40px; align-items:center; }
-.container.modern .content { flex:1; min-width:0; }
-.title { font-size:42px; margin:0; font-weight:900; line-height:1.15; }
+.container.modern { 
+  display:flex; 
+  gap:60px; 
+  align-items:center; 
+  justify-content:center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.container.modern .content { flex:1; min-width:0; max-width: 700px; }
+.container.modern .icon { 
+  width: 240px; 
+  height: 240px; 
+  flex-shrink: 0;
+}
+.title { font-size:56px; margin:0; font-weight:900; line-height:1.15; }
 .ticker { opacity:.9 }
 /* contract pill */
-.badge.contract { margin-top:12px; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+.badge.contract { 
+  margin-top:16px; 
+  white-space:nowrap; 
+  max-width:100%; 
+  overflow:hidden; 
+  text-overflow:ellipsis;
+  font-size: 15px;
+  padding: .4rem .75rem;
+}
 /* buttons wrap neatly */
-.ctas { align-items:center }
+.ctas { align-items:center; margin-top: 20px; }
+.btn { font-size: 16px; padding: .75rem 1.25rem; }
+.subtitle { font-size: 20px; margin-top: 12px; }
 /* responsive: stack on mobile */
 @media (max-width: 820px) {
   .container.modern { flex-direction:column; text-align:center; }
   .badge.contract { margin-left:auto; margin-right:auto; }
   .ctas { justify-content:center }
+  .title { font-size: 42px; }
+  .container.modern .icon { width: 180px; height: 180px; }
 }
-`;
+`
 
 /* -------------------- CLASSIC (vertical, icon on top) -------------------- */
 const CLASSIC_HTML = `
@@ -103,16 +127,16 @@ const CLASSIC_HTML = `
     {{/CONTRACT_ADDRESS}}
 
     <div class="ctas" style="justify-content:center; margin-top:16px">
-      {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy Link</a>{{/BUY_LINK}}
+      {{#BUY_LINK}}<a class="btn btn-primary" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
       {{#WEBSITE_URL}}<a class="btn btn-primary" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
       {{#TWITTER_URL}}<a class="btn btn-primary" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
       {{#TELEGRAM_URL}}<a class="btn btn-primary" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
     </div>
   </div>
 </main>
-`;
+`
 
-const CLASSIC_CSS = `${BASE_CSS}`;
+const CLASSIC_CSS = `${BASE_CSS}`
 
 /* -------------------- MINIMAL (white) -------------------- */
 const MINIMAL_HTML = `
@@ -131,7 +155,7 @@ const MINIMAL_HTML = `
           <code style="display:inline-block; padding:.25rem .5rem; background:#f3f4f6; border-radius:.375rem; margin-top:10px">{{CONTRACT_ADDRESS}}</code>
         {{/CONTRACT_ADDRESS}}
         <div style="display:flex; flex-wrap:wrap; gap:.5rem; margin-top:12px">
-          {{#BUY_LINK}}<a class="btn" style="border:1px solid #e5e7eb" href="{{BUY_LINK}}" target="_blank">Buy Link</a>{{/BUY_LINK}}
+          {{#BUY_LINK}}<a class="btn" style="border:1px solid #e5e7eb" href="{{BUY_LINK}}" target="_blank">Buy {{#TICKER}}{{TICKER}}{{/TICKER}}{{^TICKER}}Coin{{/TICKER}}</a>{{/BUY_LINK}}
           {{#WEBSITE_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{WEBSITE_URL}}" target="_blank">Website</a>{{/WEBSITE_URL}}
           {{#TWITTER_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{TWITTER_URL}}" target="_blank">X.com</a>{{/TWITTER_URL}}
           {{#TELEGRAM_URL}}<a class="btn" style="border:1px solid #e5e7eb" href="{{TELEGRAM_URL}}" target="_blank">Telegram</a>{{/TELEGRAM_URL}}
@@ -140,20 +164,20 @@ const MINIMAL_HTML = `
     </div>
   </div>
 </main>
-`;
+`
 
 const MINIMAL_CSS = `
 *{box-sizing:border-box}body,html,.portfolio-container{margin:0;padding:0}a{text-decoration:none}
 .btn{display:inline-block;padding:.5rem .75rem;border-radius:.5rem;color:#111}
-`;
+`
 
 export function getTemplateByName(name?: string): Template {
-  const key = (name || "modern").toLowerCase();
+  const key = (name || "modern").toLowerCase()
   if (key === "classic") {
-    return { name: "classic", display_name: "Classic", html_template: CLASSIC_HTML, css_template: CLASSIC_CSS };
+    return { name: "classic", display_name: "Classic", html_template: CLASSIC_HTML, css_template: CLASSIC_CSS }
   }
   if (key === "minimal") {
-    return { name: "minimal", display_name: "Minimal", html_template: MINIMAL_HTML, css_template: MINIMAL_CSS };
+    return { name: "minimal", display_name: "Minimal", html_template: MINIMAL_HTML, css_template: MINIMAL_CSS }
   }
-  return { name: "modern", display_name: "Modern", html_template: MODERN_HTML, css_template: MODERN_CSS };
+  return { name: "modern", display_name: "Modern", html_template: MODERN_HTML, css_template: MODERN_CSS }
 }
