@@ -5,8 +5,9 @@ export default function Home() {
     <main className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Portfolio Generator</h1>
-          <p className="text-muted-foreground text-lg">Create your custom token portfolio website in minutes</p>
+          <h1 className="text-4xl font-bold text-foreground mb-4">DEX Page </h1>
+          <p className="text-muted-foreground text-lg">Create your custom token page in <span className="font-bold">10 seconds</span></p>
+          <p className="text-muted-foreground text-lg">Since May 2025, created <span className="font-bold">5,000+</span> pages used across DEXes </p>
         </div>
         <PortfolioBuilder />
       </div>

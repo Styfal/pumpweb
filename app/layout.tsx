@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DexPage - Instant Portfolio Builder",
-  description: "Create a coin portfolio in seconds",
+  description: "DEX Page is an instant token page creator for DEXes across Solana, Etherium, BSC and much other. Create a free token page within 10 seconds. Useful for pump.fun tokens, etc.",
 };
 
 export default function RootLayout({
