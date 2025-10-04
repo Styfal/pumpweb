@@ -61,7 +61,7 @@ const portfolioSchema = z.object({
     .min(1, "Buy link is required")
     .max(80, "Buy link must below 80 characters")
     .refine(val => isValidUrl(val), "Buy link must be a valid URL")
-    .refine(val => val.includes("https://pump.fun/"), "Buy link must be a valid pump.fun swap URL"),
+    .refine(val => val.includes("https://pump.fun/coin/"), "Buy link must be a valid pump.fun URL"),
   contract_address: z.string().max(150, "Contract address must be valid").optional().or(z.literal("")),
   slogan: z.string().max(100, "Slogan must be at most 100 characters").optional().or(z.literal("")),
   twitter_url: z
@@ -401,11 +401,11 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Buy Link * (pump.fun swap URL)</Label>
+                <Label className="text-[#e0e0e0]">Buy Link * (pump.fun URL)</Label>
                 <Input
                   value={formData.buy_link}
                   onChange={e => handleInputChange("buy_link", e.target.value)}
-                  placeholder="https://swap.pump.fun/..."
+                  placeholder="https://pump.fun/coin/..."
                   className={`bg-[#2a2a2a] border ${validationErrors.buy_link ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
                   required
                 />
