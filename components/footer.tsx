@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-background">
@@ -14,15 +16,15 @@ export function Footer() {
           <div className="flex flex-col">
             <h4 className="font-medium mb-4">Support</h4>
             <div className="flex space-x-8">
-              <a href="/faq" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              <Link href="/faq" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                 FAQ
-              </a>
-              <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              </Link>
+              <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                 About
-              </a>
-              <a href="/terms" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              </Link>
+              <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -30,7 +32,7 @@ export function Footer() {
         <div className="mt-8 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              © 2025 PumpWeb. All rights reserved.
+              © 2025 DexPage. All rights reserved.
             </p>
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors mt-4 md:mt-0">
               <span className="sr-only">Discord</span>
@@ -42,4 +44,3 @@ export function Footer() {
     </footer>
   )
 }
-        
