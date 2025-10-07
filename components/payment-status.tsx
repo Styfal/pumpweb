@@ -75,7 +75,7 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
     const username = getUsernameFromStatus(s);
 
     if (s.payment.status === "completed" && username) {
-      const url = `/portfolio/${username}`;
+      const url = `/${username}`;
       redirected.current = true;
 
       // optional callback first
@@ -124,7 +124,7 @@ export function PaymentStatusComponent({ paymentId, onComplete }: PaymentStatusP
   const s = status as unknown as StatusShape;
   const { payment } = s;
   const fallbackUsername = getUsernameFromStatus(s);
-  const fallbackUrl = fallbackUsername ? `/portfolio/${fallbackUsername}` : null;
+  const fallbackUrl = fallbackUsername ? `/${fallbackUsername}` : null;
 
   return (
     <Card className="w-full max-w-md mx-auto">

@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     );
 
     const url =
-      portfolio && portfolio.is_published ? `/portfolio/${portfolio.username}` : null;
+      portfolio && portfolio.is_published ? `/${portfolio.username}` : null;
 
     // Always JSON; client (PaymentStatusComponent) handles redirect
     return NextResponse.json({

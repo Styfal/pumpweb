@@ -217,7 +217,7 @@ export function PortfolioBuilder() {
         banner_url: formData.banner_url ?? undefined,
       }
 
-      const response = await PaymentService.createPayment(portfolioData, 50, "USD")
+      const response = await PaymentService.createPayment(portfolioData, 0.01, "USD")
 
       if (!response.success || !response.payment) {
         setError(response.error || "Failed to create payment")
@@ -515,7 +515,7 @@ export function PortfolioBuilder() {
             >
               {isSubmitting ? "Creating Payment..." : (
                 <> 
-                  <CreditCard className="mr-2 h-4 w-4" /> Purchase Portfolio ($1)
+                  <CreditCard className="mr-2 h-4 w-4" /> Purchase Portfolio ($0.01)
                 </>
               )}
             </Button>
@@ -524,14 +524,16 @@ export function PortfolioBuilder() {
               type="button"
               variant="outline"
               className="w-full border-[#444] text-[#e0e0e0] hover:bg-[#2a2a2a]"
-              onClick={() => window.open("https://discord.gg/your-invite", "_blank")}
+              onClick={() => window.open("https://discord.gg/pQxZCUkeg3", "_blank")}
             >
               Manage Portfolio
             </Button>
 
             <div className="text-center text-sm text-[#bbb] space-y-1">
-              <p>One-time payment of $1</p>
-              <p>• Custom portfolio URL • Professional templates • Instant publishing</p>
+              <p>One-time payment of $0.01</p>
+              <p>• Custom portfolio URL • Professional templates • Instant publishing
+                Note: The $0.01 fee is used to cover website hosting costs. We do not plan to increase prices in the near future.
+              </p>
             </div>
           </form>
         </CardContent>
