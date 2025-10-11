@@ -73,8 +73,9 @@ ${BASE_CSS}
 .badge.contract{margin-top:16px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:15px;padding:.4rem .75rem}
 /* buttons */
 .ctas{align-items:center;margin-top:20px}
-.btn{font-size:16px;padding:.75rem 1.25rem}
-.subtitle{font-size:20px;margin-top:12px}
+.btn{font-size:16px;padding:.75rem 1.25rem;transition:all 0.2s;box-shadow:0 2px 4px rgba(16,185,129,0.2)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(16,185,129,0.3)}
+.subtitle{font-size:20px;margin-top:12px;max-width:500px;word-wrap:break-word;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* responsive */
 @media (max-width: 820px){
   .container.modern{flex-direction:column;text-align:center}
@@ -82,9 +83,11 @@ ${BASE_CSS}
   .ctas{justify-content:center}
   .title{font-size:42px}
   .container.modern .icon{width:180px;height:180px}
+  .subtitle{font-size:18px;max-width:400px;margin-left:auto;margin-right:auto}
 }
 @media (max-width: 640px){
   .badge.contract{white-space:normal;word-break:break-all;overflow-wrap:anywhere;text-overflow:clip}
+  .subtitle{font-size:16px}
 }
 `
 
@@ -123,8 +126,12 @@ ${BASE_CSS}
 .classic .icon{margin:0 auto}
 .classic-title{font-size:42px;margin:18px 0 0 0;font-weight:900}
 .classic-ticker{opacity:.9}
+.btn{transition:all 0.2s;box-shadow:0 2px 4px rgba(16,185,129,0.2)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(16,185,129,0.3)}
+.subtitle{word-wrap:break-word;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 @media (max-width: 640px){
   .badge.contract{white-space:normal;word-break:break-all;overflow-wrap:anywhere;text-overflow:clip;margin-left:auto;margin-right:auto}
+  .subtitle{font-size:16px}
 }
 `
 
@@ -158,14 +165,15 @@ const MINIMAL_CSS = `
 *{box-sizing:border-box}html,body,.portfolio-container{margin:0;padding:0}
 a{text-decoration:none}
 .minimal-main{min-height:100vh;display:flex;align-items:center;background:#fff;color:#111}
-.btn{display:inline-block;padding:.5rem .75rem;border-radius:.5rem;color:#111}
-.minimal-btn{border:1px solid #e5e7eb}
+.btn{display:inline-block;padding:.5rem .75rem;border-radius:.5rem;color:#111;transition:all 0.2s}
+.minimal-btn{border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(16,185,129,0.1)}
+.minimal-btn:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(16,185,129,0.2);border-color:#10b981;background:#f0fdf4}
 .container.minimal{display:flex;gap:48px;align-items:center;justify-content:center;max-width:1200px;margin:0 auto;padding:24px}
 .icon.minimal-icon{width:200px;height:200px;flex-shrink:0;border-radius:16px;border:1px solid #e5e7eb;background:#f1f5f9 center/cover no-repeat}
 .container.minimal .content{flex:1;min-width:0;max-width:700px}
 .minimal-title{font-size:40px;margin:0;font-weight:800;line-height:1.2}
 .minimal-ticker{color:#6b7280}
-.minimal-subtitle{color:#1f2937;font-size:18px;margin-top:8px}
+.minimal-subtitle{color:#1f2937;font-size:18px;margin-top:8px;word-wrap:break-word;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .minimal-contract{display:inline-block;margin-top:10px;padding:.25rem .5rem;background:#f3f4f6;border-radius:.375rem;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 /* tablet/phone */
 @media (max-width: 820px){
@@ -174,10 +182,12 @@ a{text-decoration:none}
   .ctas{justify-content:center}
   .icon.minimal-icon{width:160px;height:160px}
   .minimal-title{font-size:32px}
+  .minimal-subtitle{font-size:16px}
 }
 /* wrap contract for small screens */
 @media (max-width: 640px){
   .minimal-contract{white-space:normal;word-break:break-all;overflow-wrap:anywhere;text-overflow:clip}
+  .minimal-subtitle{font-size:14px}
 }
 `
 

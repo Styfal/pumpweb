@@ -3,7 +3,7 @@ export default function AboutPage() {
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">About DexPage</h1>
+          <h1 className="text-4xl font-bold mb-4">About DEXPage</h1>
           <p className="text-muted-foreground text-lg">
             Empowering crypto projects with beautiful, professional portfolio pages
           </p>
@@ -26,11 +26,11 @@ export default function AboutPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Why Choose DexPage&#63;</h2>
+            <h2 className="text-2xl font-semibold mb-4">Why Choose DEXPage&#63;</h2>
             <p className="text-muted-foreground leading-relaxed">
               In the fast-moving world of cryptocurrency, first impressions matter. A professional
               portfolio page builds trust with your community and provides a central hub for all
-              your project information. DexPage makes it simple to create that crucial first impression
+              your project information. DEXPage makes it simple to create that crucial first impression
               without the complexity of traditional web development.
             </p>
           </section>

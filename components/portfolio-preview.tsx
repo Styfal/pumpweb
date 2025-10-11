@@ -65,6 +65,9 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
     }
 
     const modernHtml = () => {
+      const linkCount = [safe.buy_link, safe.website_url, safe.twitter_url, safe.telegram_url].filter(link => link && link.trim()).length
+      const isThreeOrLess = linkCount <= 3
+      
       return `
       <!doctype html>
       <html>
@@ -74,27 +77,22 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <title>${safe.token_name || "Preview"}</title>
         <style>
           *{margin:0;padding:0;box-sizing:border-box}
-          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
-          .bg-blur{position:fixed;inset:0;z-index:-2;background:${safe.banner_url ? `url('${safe.banner_url}')` : "#0f172a"};background-size:cover;background-position:center;filter:blur(12px);transform:scale(1.1)}
-          .bg-overlay{position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.45)}
-          .container{display:flex;align-items:center;gap:20px;color:white;max-width:100%}
-          .icon{width:120px;height:120px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);box-shadow:0 20px 40px rgba(0,0,0,0.3);flex-shrink:0;background:${safe.logo_url ? `url('${safe.logo_url}')` : "#0b1220"};background-size:cover;background-position:center}
-          .content{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1}
-          h1{font-size:28px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.2);word-wrap:break-word}
-          .ticker{opacity:0.9}
-          .slogan{font-size:14px;color:rgba(255,255,255,0.9)}
-          .contract{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background 0.2s;max-width:100%}
-          .contract:hover{background:rgba(0,0,0,0.7)}
-          .contract span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .ctas{display:flex;flex-wrap:wrap;gap:8px}
-          .btn{display:inline-block;padding:6px 12px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:13px;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
-          .btn:hover{background:#059669}
-          @media(max-width:600px){.container{flex-direction:column;text-align:center}.icon{width:128px;height:128px}}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+          .container{display:flex;align-items:center;gap:12px;color:white;max-width:400px;width:100%}
+          .icon{width:140px;height:140px;border-radius:14px;border:3px solid rgba(255,255,255,0.9);box-shadow:0 6px 18px rgba(0,0,0,0.25);flex-shrink:0;background:${safe.logo_url ? `url('${safe.logo_url}')` : "#1e293b"};background-size:cover;background-position:center}
+          .content{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+          h1{font-size:${isThreeOrLess ? '22px' : '20px'};font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.3);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .ticker{opacity:0.9;font-weight:600}
+          .slogan{font-size:${isThreeOrLess ? '12px' : '11px'};color:rgba(255,255,255,0.9);line-height:1.3;margin-top:1px;word-wrap:break-word;overflow-wrap:break-word;max-width:180px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+          .contract{display:inline-flex;align-items:center;gap:4px;padding:${isThreeOrLess ? '5px 9px' : '4px 8px'};background:rgba(0,0,0,0.35);border-radius:5px;font-size:${isThreeOrLess ? '11px' : '10px'};font-weight:500;cursor:pointer;transition:background 0.2s;max-width:fit-content;margin-top:2px}
+          .contract:hover{background:rgba(0,0,0,0.45)}
+          .contract span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+          .ctas{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+          .btn{display:inline-block;padding:${isThreeOrLess ? '6px 13px' : '5px 11px'};background:#10b981;color:white;text-decoration:none;border-radius:6px;font-weight:600;font-size:${isThreeOrLess ? '11px' : '10px'};border:1px solid #059669;transition:all 0.2s;box-shadow:0 2px 4px rgba(16,185,129,0.2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px}
+          .btn:hover{background:#059669;transform:translateY(-1px);box-shadow:0 3px 8px rgba(16,185,129,0.3)}
         </style>
       </head>
       <body>
-        <div class="bg-blur"></div>
-        <div class="bg-overlay"></div>
         <div class="container">
           <div class="icon"></div>
           <div class="content">
@@ -102,10 +100,10 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
             ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
             ${safe.contract_address ? `<div class="contract" onclick="navigator.clipboard&&navigator.clipboard.writeText('${safe.contract_address}')"><span>${safe.contract_address}</span><span>📋</span></div>` : ""}
             <div class="ctas">
-              ${safe.buy_link ? `<a class="btn" href="${safe.buy_link}" target="_blank" rel="noreferrer">Buy ${safe.ticker || "Coin"}</a>` : ""}
-              ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : ""}
-              ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : ""}
-              ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : ""}
+              ${safe.buy_link ? `<a class="btn" href="${safe.buy_link}" target="_blank" rel="noreferrer" title="Buy ${safe.ticker || ""}">Buy ${safe.ticker || ""}</a>` : ""}
+              ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer" title="Website">Website</a>` : ""}
+              ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer" title="X.com">X.com</a>` : ""}
+              ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer" title="Telegram">Telegram</a>` : ""}
             </div>
           </div>
         </div>
@@ -115,6 +113,9 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
     }
 
     const classicHtml = () => {
+      const linkCount = [safe.buy_link, safe.website_url, safe.twitter_url, safe.telegram_url].filter(link => link && link.trim()).length
+      const isThreeOrLess = linkCount <= 3
+      
       return `
       <!doctype html>
       <html>
@@ -124,45 +125,32 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <title>${safe.token_name || "Preview"}</title>
         <style>
           *{margin:0;padding:0;box-sizing:border-box}
-          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;padding:24px;position:relative;overflow:hidden}
-          .bg-blur{position:fixed;inset:0;z-index:-2;background:${safe.banner_url ? `url('${safe.banner_url}')` : "#0f172a"};background-size:cover;background-position:center;filter:blur(12px);transform:scale(1.1)}
-          .bg-overlay{position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,0.45)}
-          .container{width:100%;max-width:1280px;margin:0 auto;color:white}
-          .grid{display:grid;grid-template-columns:200px 1fr;gap:40px;align-items:center}
-          .icon-wrapper{display:flex;justify-content:center}
-          .icon{width:192px;height:192px;border-radius:16px;border:4px solid rgba(255,255,255,0.9);box-shadow:0 20px 40px rgba(0,0,0,0.3);background:${safe.logo_url ? `url('${safe.logo_url}')` : "#0b1220"};background-size:cover;background-position:center}
-          .content{display:flex;flex-direction:column;gap:16px}
-          h1{font-size:48px;font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
-          .ticker{opacity:0.9}
-          .slogan{font-size:18px;color:rgba(255,255,255,0.9)}
-          .contract{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,0,0,0.6);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;max-width:fit-content}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;background:${safe.banner_url ? `url('${safe.banner_url}')` : "linear-gradient(to bottom,#1e3a8a,#1e40af)"};background-size:cover;background-position:center;position:relative}
+          body::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:1}
+          .container{display:flex;flex-direction:column;align-items:center;text-align:center;color:white;z-index:2;position:relative;gap:8px;max-width:380px}
+          .icon{width:${isThreeOrLess ? '140px' : '140px'};height:${isThreeOrLess ? '140px' : '140px'};border-radius:${isThreeOrLess ? '20px' : '16px'};border:${isThreeOrLess ? '4px' : '3px'} solid rgba(255,255,255,0.9);box-shadow:0 6px 24px rgba(0,0,0,0.4);background:${safe.logo_url ? `url('${safe.logo_url}')` : "#1e293b"};background-size:cover;background-position:center;margin-bottom:4px}
+          h1{font-size:${isThreeOrLess ? '30px' : '25px'};font-weight:800;text-shadow:0 2px 4px rgba(0,0,0,0.6);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+          .ticker{opacity:0.95;font-weight:700}
+          .slogan{font-size:${isThreeOrLess ? '13px' : '12px'};color:rgba(255,255,255,0.95);max-width:300px;line-height:1.3;margin-top:2px;word-wrap:break-word;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+          .contract{display:inline-flex;align-items:center;gap:5px;padding:${isThreeOrLess ? '6px 12px' : '6px 12px'};background:rgba(0,0,0,0.6);border-radius:7px;font-size:${isThreeOrLess ? '11px' : '10px'};font-weight:500;cursor:pointer;transition:background 0.2s;max-width:fit-content;margin:4px 0;backdrop-filter:blur(10px)}
           .contract:hover{background:rgba(0,0,0,0.7)}
-          .contract span{max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-          .ctas{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
-          .btn{display:inline-block;padding:8px 16px;background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(16,185,129,0.3);transition:background 0.2s}
-          .btn:hover{background:#059669}
-          @media(max-width:800px){.grid{grid-template-columns:1fr;text-align:center}.icon-wrapper{justify-content:center}.contract{margin:0 auto}}
+          .contract span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+          .ctas{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}
+          .btn{display:inline-block;padding:${isThreeOrLess ? '8px 18px' : '8px 16px'};background:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:700;font-size:${isThreeOrLess ? '13px' : '12px'};border:1.5px solid #059669;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3);backdrop-filter:blur(10px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}
+          .btn:hover{background:#059669;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.4)}
         </style>
       </head>
       <body>
-        <div class="bg-blur"></div>
-        <div class="bg-overlay"></div>
         <div class="container">
-          <div class="grid">
-            <div class="icon-wrapper">
-              <div class="icon"></div>
-            </div>
-            <div class="content">
-              <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
-              ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
-              ${safe.contract_address ? `<div class="contract" onclick="navigator.clipboard&&navigator.clipboard.writeText('${safe.contract_address}')"><span>${safe.contract_address}</span><span>📋</span></div>` : ""}
-              <div class="ctas">
-                ${safe.buy_link ? `<a class="btn" href="${safe.buy_link}" target="_blank" rel="noreferrer">Buy ${safe.ticker || "Coin"}</a>` : ""}
-                ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : ""}
-                ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : ""}
-                ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : ""}
-              </div>
-            </div>
+          <div class="icon"></div>
+          <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
+          ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
+          ${safe.contract_address ? `<div class="contract" onclick="navigator.clipboard&&navigator.clipboard.writeText('${safe.contract_address}')"><span>${safe.contract_address}</span><span>📋</span></div>` : ""}
+          <div class="ctas">
+            ${safe.buy_link ? `<a class="btn" href="${safe.buy_link}" target="_blank" rel="noreferrer" title="Buy ${safe.ticker || "Token"}">Buy ${safe.ticker || "Token"}</a>` : ""}
+            ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer" title="Website">Website</a>` : ""}
+            ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer" title="X.com">X.com</a>` : ""}
+            ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer" title="Telegram">Telegram</a>` : ""}
           </div>
         </div>
       </body>
@@ -171,6 +159,9 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
     }
 
     const minimalHtml = () => {
+      const linkCount = [safe.buy_link, safe.website_url, safe.twitter_url, safe.telegram_url].filter(link => link && link.trim()).length
+      const isThreeOrLess = linkCount <= 3
+      
       return `
       <!doctype html>
       <html>
@@ -180,39 +171,29 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <title>${safe.token_name || "Preview"}</title>
         <style>
           *{margin:0;padding:0;box-sizing:border-box}
-          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;background:#ffffff;color:#0f172a;display:flex;align-items:center;padding:24px}
-          .container{width:100%;max-width:1024px;margin:0 auto}
-          .grid{display:grid;grid-template-columns:200px 1fr;gap:40px;align-items:center}
-          .icon-wrapper{display:flex;justify-content:center}
-          .icon{width:192px;height:192px;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(15,23,42,0.08);background:${safe.logo_url ? `url('${safe.logo_url}')` : "#f1f5f9"};background-size:cover;background-position:center}
-          .content{display:flex;flex-direction:column;gap:16px}
-          h1{font-size:48px;font-weight:700}
-          .ticker{color:#64748b}
-          .slogan{font-size:18px;color:#334155}
-          .contract{display:inline-block;padding:8px 12px;background:#f1f5f9;border-radius:6px;font-size:14px;font-family:monospace;word-break:break-all;max-width:100%}
-          .ctas{display:flex;flex-wrap:wrap;gap:12px}
-          .btn{display:inline-block;padding:8px 16px;border:1px solid #cbd5e1;color:#0f172a;text-decoration:none;border-radius:8px;transition:background 0.2s}
-          .btn:hover{background:#f1f5f9}
-          @media(max-width:700px){.grid{grid-template-columns:1fr;text-align:center}.icon-wrapper{justify-content:center}}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;background:#ffffff;color:#0f172a;display:flex;align-items:center;justify-content:center;padding:32px}
+          .container{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:350px;gap:8px}
+          .icon{width:${isThreeOrLess ? '140px' : '140px'};height:${isThreeOrLess ? '140px' : '140px'};border-radius:${isThreeOrLess ? '16px' : '12px'};border:${isThreeOrLess ? '2px' : '1.5px'} solid #e2e8f0;box-shadow:0 2px 8px rgba(15,23,42,0.08);background:${safe.logo_url ? `url('${safe.logo_url}')` : "#f8fafc"};background-size:cover;background-position:center;margin-bottom:4px}
+          h1{font-size:${isThreeOrLess ? '25px' : '20px'};font-weight:700;line-height:1.2;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+          .ticker{color:#64748b;font-weight:600}
+          .slogan{font-size:${isThreeOrLess ? '12px' : '11px'};color:#475569;max-width:280px;line-height:1.3;margin-top:2px;word-wrap:break-word;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+          .contract{display:inline-block;padding:${isThreeOrLess ? '7px 13px' : '6px 12px'};background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;font-size:${isThreeOrLess ? '11px' : '11px'};font-family:monospace;color:#475569;word-break:break-all;max-width:100%;margin:4px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .ctas{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}
+          .btn{display:inline-block;padding:${isThreeOrLess ? '7px 15px' : '6px 14px'};background:#10b981;color:white;text-decoration:none;border-radius:6px;font-size:${isThreeOrLess ? '13px' : '12px'};font-weight:600;transition:all 0.2s;border:1px solid #059669;box-shadow:0 1px 3px rgba(16,185,129,0.2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
+          .btn:hover{background:#059669;transform:translateY(-1px);box-shadow:0 2px 6px rgba(16,185,129,0.3)}
         </style>
       </head>
       <body>
         <div class="container">
-          <div class="grid">
-            <div class="icon-wrapper">
-              <div class="icon"></div>
-            </div>
-            <div class="content">
-              <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
-              ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
-              ${safe.contract_address ? `<div class="contract">${safe.contract_address}</div>` : ""}
-              <div class="ctas">
-                ${safe.buy_link ? `<a class="btn" href="${safe.buy_link}" target="_blank" rel="noreferrer">Buy ${safe.ticker || "Coin"}</a>` : ""}
-                ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer">Website</a>` : ""}
-                ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer">X.com</a>` : ""}
-                ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer">Telegram</a>` : ""}
-              </div>
-            </div>
+          <div class="icon"></div>
+          <h1>${safe.token_name} ${safe.ticker ? `<span class="ticker">(${safe.ticker})</span>` : ""}</h1>
+          ${safe.slogan ? `<p class="slogan">${safe.slogan}</p>` : ""}
+          ${safe.contract_address ? `<div class="contract" title="${safe.contract_address}">${safe.contract_address}</div>` : ""}
+          <div class="ctas">
+            ${safe.buy_link ? `<a class="btn" href="${safe.buy_link}" target="_blank" rel="noreferrer" title="Buy ${safe.ticker || ""}">Buy ${safe.ticker || ""}</a>` : ""}
+            ${safe.website_url ? `<a class="btn" href="${safe.website_url}" target="_blank" rel="noreferrer" title="Website">Website</a>` : ""}
+            ${safe.twitter_url ? `<a class="btn" href="${safe.twitter_url}" target="_blank" rel="noreferrer" title="Twitter">Twitter</a>` : ""}
+            ${safe.telegram_url ? `<a class="btn" href="${safe.telegram_url}" target="_blank" rel="noreferrer" title="Telegram">Telegram</a>` : ""}
           </div>
         </div>
       </body>

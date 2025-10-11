@@ -49,7 +49,7 @@ const portfolioSchema = z.object({
     .regex(/^[a-zA-Z0-9-]+$/, "Domain can only contain letters, numbers, and hyphens")
     .optional()
     .or(z.literal("")),
-  token_name: z.string().min(1, "Token name is required").max(15, "Token name must be at most 50 characters"),
+  token_name: z.string().min(1, "Token name is required").max(500, "Token name must be at most 500 characters"),
   ticker: z
     .string()
     .max(10, "Ticker symbol must be at most 10 characters")
@@ -59,10 +59,11 @@ const portfolioSchema = z.object({
   buy_link: z
     .string()
     .min(1, "Buy link is required")
-    .max(80, "Buy link must below 80 characters")
+    .max(500, "Buy link must below 500 characters")
     .refine(val => isValidUrl(val), "Buy link must be a valid URL")
     .refine(val => val.includes("https://pump.fun/coin/"), "Buy link must be a valid pump.fun URL"),
-  contract_address: z.string().max(150, "Contract address must be valid").optional().or(z.literal("")),
+  contract_address: z
+    .string().max(500, "Contract address must be valid").optional().or(z.literal("")),
   slogan: z.string().max(100, "Slogan must be at most 100 characters").optional().or(z.literal("")),
   twitter_url: z
     .string()
@@ -383,7 +384,7 @@ export function PortfolioBuilder() {
                 <Input
                   value={formData.username}
                   onChange={e => handleInputChange("username", e.target.value)}
-                  placeholder="Auto-generated if empty"
+                  placeholder="dexpage.net/example-token-name"
                   className={`bg-[#2a2a2a] border ${validationErrors.username ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
                 />
                 {validationErrors.username && <p className="text-sm text-red-500 mt-1">{validationErrors.username}</p>}
@@ -400,24 +401,14 @@ export function PortfolioBuilder() {
                 {validationErrors.ticker && <p className="text-sm text-red-500 mt-1">{validationErrors.ticker}</p>}
               </div>
 
-              <div>
-                <Label className="text-[#e0e0e0]">Buy Link * (pump.fun URL)</Label>
-                <Input
-                  value={formData.buy_link}
-                  onChange={e => handleInputChange("buy_link", e.target.value)}
-                  placeholder="https://pump.fun/coin/..."
-                  className={`bg-[#2a2a2a] border ${validationErrors.buy_link ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
-                  required
-                />
-                {validationErrors.buy_link && <p className="text-sm text-red-500 mt-1">{validationErrors.buy_link}</p>}
-              </div>
+  
 
               <div>
-                <Label className="text-[#e0e0e0]">Contract Address (0x format)</Label>
+                <Label className="text-[#e0e0e0]">Contract Address (...pump, 0x format)</Label>
                 <Input
                   value={formData.contract_address}
                   onChange={e => handleInputChange("contract_address", e.target.value)}
-                  placeholder="0x..."
+                  placeholder="0x... or ...pump"
                   className={`bg-[#2a2a2a] border ${validationErrors.contract_address ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
                 />
                 {validationErrors.contract_address && (
@@ -437,6 +428,18 @@ export function PortfolioBuilder() {
                   {validationErrors.slogan && <p className="text-sm text-red-500">{validationErrors.slogan}</p>}
                   <p className="text-sm text-[#888] ml-auto">{formData.slogan.length}/100</p>
                 </div>
+              </div>
+
+               <div>
+                <Label className="text-[#e0e0e0]">Buy Link * (pump.fun, four.meme, raydium, pancakeswap, etc)</Label>
+                <Input
+                  value={formData.buy_link}
+                  onChange={e => handleInputChange("buy_link", e.target.value)}
+                  placeholder="https://pump.fun/coin/your-link or https://four.meme/token/your-link"
+                  className={`bg-[#2a2a2a] border ${validationErrors.buy_link ? "border-red-500" : "border-[#444]"} text-white placeholder:text-[#888]`}
+                  required
+                />
+                {validationErrors.buy_link && <p className="text-sm text-red-500 mt-1">{validationErrors.buy_link}</p>}
               </div>
 
               <div>
@@ -515,7 +518,7 @@ export function PortfolioBuilder() {
             >
               {isSubmitting ? "Creating Payment..." : (
                 <> 
-                  <CreditCard className="mr-2 h-4 w-4" /> Purchase Portfolio ($0.01)
+                  <CreditCard className="mr-2 h-4 w-4" /> Purchase Portfolio ($0.99 USDC)
                 </>
               )}
             </Button>
@@ -530,9 +533,8 @@ export function PortfolioBuilder() {
             </Button>
 
             <div className="text-center text-sm text-[#bbb] space-y-1">
-              <p>One-time payment of $0.01</p>
-              <p>• Custom portfolio URL • Professional templates • Instant publishing
-                Note: The $0.01 fee is used to cover website hosting costs. We do not plan to increase prices in the near future.
+              <p>One-time payment of $0.99 USDC </p>
+              <p>Note: The $0.99 USDC fee is used to cover website hosting costs. We do not plan to increase prices in the near future.
               </p>
             </div>
           </form>

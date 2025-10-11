@@ -5,7 +5,7 @@ export default function HelpPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Help Center</h1>
           <p className="text-muted-foreground text-lg">
-            Find answers to common questions and get support for using PumpWeb
+            Find answers to common questions and get support for using DEXPage
           </p>
         </div>
 
