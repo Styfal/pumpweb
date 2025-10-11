@@ -8,7 +8,7 @@ export function Footer() {
           <div className="mb-6 md:mb-0 md:max-w-md">
             <h3 className="font-semibold text-lg mb-4">DEXPage</h3>
             <p className="text-muted-foreground text-sm">
-              We believe token page creation should be as easy and affordable as creating a token on pump.fun., four.meme, radium, pancakeswap, etc. 
+              We believe token page creation should be as easy and affordable as creating a token on pump.fun, four.meme, etc. 
               Everyone should be able to create a token page with no hassle. That is our mission.
             </p>
           </div>
