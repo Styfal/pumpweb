@@ -369,7 +369,7 @@ export function PortfolioBuilder() {
 
             <div className="space-y-4">
               <div>
-                <Label className="text-[#e0e0e0]">Token Name * (max 50 chars)</Label>
+                <Label className="text-[#e0e0e0]">Token Name * (max 500 chars)</Label>
                 <Input
                   value={formData.token_name}
                   onChange={e => handleInputChange("token_name", e.target.value)}

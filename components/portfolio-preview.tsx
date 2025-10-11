@@ -77,8 +77,9 @@ export function PortfolioPreview({ data }: PortfolioPreviewProps) {
         <title>${safe.token_name || "Preview"}</title>
         <style>
           *{margin:0;padding:0;box-sizing:border-box}
-          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
-          .container{display:flex;align-items:center;gap:12px;color:white;max-width:400px;width:100%}
+          body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:${safe.banner_url ? `url('${safe.banner_url}')` : "linear-gradient(135deg,#667eea 0%,#764ba2 100%)"};background-size:cover;background-position:center;position:relative}
+          body::before{content:'';position:absolute;inset:0;background:${safe.banner_url ? "rgba(0,0,0,0.3)" : "transparent"};z-index:1}
+          .container{display:flex;align-items:center;gap:12px;color:white;max-width:400px;width:100%;z-index:2;position:relative}
           .icon{width:140px;height:140px;border-radius:14px;border:3px solid rgba(255,255,255,0.9);box-shadow:0 6px 18px rgba(0,0,0,0.25);flex-shrink:0;background:${safe.logo_url ? `url('${safe.logo_url}')` : "#1e293b"};background-size:cover;background-position:center}
           .content{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
           h1{font-size:${isThreeOrLess ? '22px' : '20px'};font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.3);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
