@@ -41,30 +41,83 @@ const isValidUrl = (url: string): boolean => {
   }
 }
 
+// Bad words filter
+const badWords = [
+  "nazi", "hitler", "holocaust", "genocide", "terrorist", "terrorism", 
+  "pedophile", "child porn", "rape", "murder", "kill", "death", "suicide",
+  "drug", "cocaine", "heroin", "meth", "cannabis", "marijuana", "weed",
+  "fuck", "shit", "bitch", "asshole", "damn", "hell", "crap", "piss",
+  "retard", "faggot", "nigger", "chink", "spic", "kike", "wetback",
+  "scam", "fraud", "ponzi", "pyramid", "fake", "counterfeit", "illegal"
+]
+
+const containsBadWords = (text: string): boolean => {
+  if (!text) return false
+  const lowerText = text.toLowerCase()
+  return badWords.some(word => lowerText.includes(word))
+}
+
 const portfolioSchema = z.object({
   username: z
     .string()
     .min(3, "Domain name must be at least 3 characters")
     .max(30, "Domain name must be at most 30 characters")
-    .regex(/^[a-zA-Z0-9-]+$/, "Domain can only contain letters, numbers, and hyphens")
+    .regex(/^[\p{L}\p{N}-]+$/u, "Domain can only contain letters, numbers, and hyphens")
+    .refine(val => !containsBadWords(val), "Domain name contains inappropriate content")
     .optional()
     .or(z.literal("")),
-  token_name: z.string().min(1, "Token name is required").max(500, "Token name must be at most 500 characters"),
+  token_name: z
+    .string()
+    .min(1, "Token name is required")
+    .max(500, "Token name must be at most 500 characters")
+    .refine(val => !containsBadWords(val), "Token name contains inappropriate content"),
   ticker: z
     .string()
     .max(10, "Ticker symbol must be at most 10 characters")
     .regex(/^[A-Z0-9]*$/, "Ticker should only contain uppercase letters and numbers")
+    .refine(val => !containsBadWords(val), "Ticker contains inappropriate content")
     .optional()
     .or(z.literal("")),
   buy_link: z
     .string()
     .min(1, "Buy link is required")
     .max(500, "Buy link must below 500 characters")
-    .refine(val => isValidUrl(val), "Buy link must be a valid URL")
-    .refine(val => val.includes("https://pump.fun/coin/"), "Buy link must be a valid pump.fun URL"),
+    .refine((v) => {
+      const allowedDomains = [
+        "https://moonbags.io/",
+        "https://moonit.xyz/",
+        "https://dexscreener.com/moonshot/",
+        "https://pumpkin.fun/",
+        "https://dx.fun/",
+        "https://ape.store/",
+        "https://hype.fun/",
+        "https://bonk.fun/",
+        "https://boop.fun/",
+        "https://raydium.io/",
+        "https://pinkmoon.finance/",
+        "https://pancakeswap.finance/",
+        "https://trustswap.org/",
+        "https://thekickpad.com/",
+        "https://kucoin.com/",
+        "https://bscpad.com/",
+        "https://pump.fun/coin/",
+        "https://four.meme/"
+      ]
+      return allowedDomains.some(domain => v.startsWith(domain))
+    }, { message: "Invalid buylink" })
+    .refine(val => isValidUrl(val), "Buy link must be a valid URL"),
   contract_address: z
-    .string().max(500, "Contract address must be valid").optional().or(z.literal("")),
-  slogan: z.string().max(100, "Slogan must be at most 100 characters").optional().or(z.literal("")),
+    .string()
+    .max(500, "Contract address must be valid")
+    .refine(val => !containsBadWords(val), "Contract address contains inappropriate content")
+    .optional()
+    .or(z.literal("")),
+  slogan: z
+    .string()
+    .max(100, "Slogan must be at most 100 characters")
+    .refine(val => !containsBadWords(val), "Slogan contains inappropriate content")
+    .optional()
+    .or(z.literal("")),
   twitter_url: z
     .string()
     .refine(val => isValidUrl(val), "Invalid Twitter/X URL")
@@ -77,7 +130,11 @@ const portfolioSchema = z.object({
     .refine(val => !val || val.includes("t.me"), "Must be a valid Telegram URL")
     .optional()
     .or(z.literal("")),
-  website_url: z.string().refine(val => isValidUrl(val), "Invalid website URL").optional().or(z.literal("")),
+  website_url: z
+    .string()
+    .refine(val => isValidUrl(val), "Invalid website URL")
+    .optional()
+    .or(z.literal("")),
   discord_url: z
     .string()
     .refine(val => isValidUrl(val), "Invalid Discord URL")
@@ -369,7 +426,7 @@ export function PortfolioBuilder() {
 
             <div className="space-y-4">
               <div>
-                <Label className="text-[#e0e0e0]">Token Name * (max 500 chars)</Label>
+                <Label className="text-[#e0e0e0] py-1">Token Name * (max 500 chars)</Label>
                 <Input
                   value={formData.token_name}
                   onChange={e => handleInputChange("token_name", e.target.value)}
@@ -380,7 +437,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Domain Name (3-30 chars, letters/numbers/hyphens only)</Label>
+                <Label className="text-[#e0e0e0] py-1">Domain Name (3-30 chars, letters/numbers/hyphens only)</Label>
                 <Input
                   value={formData.username}
                   onChange={e => handleInputChange("username", e.target.value)}
@@ -391,7 +448,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Ticker Symbol (max 10 chars, uppercase)</Label>
+                <Label className="text-[#e0e0e0] py-1">Ticker Symbol (max 10 chars, uppercase)</Label>
                 <Input
                   value={formData.ticker}
                   onChange={e => handleInputChange("ticker", e.target.value.toUpperCase())}
@@ -404,7 +461,7 @@ export function PortfolioBuilder() {
   
 
               <div>
-                <Label className="text-[#e0e0e0]">Contract Address (...pump, 0x format)</Label>
+                <Label className="text-[#e0e0e0] py-1">Contract Address (...pump, 0x format)</Label>
                 <Input
                   value={formData.contract_address}
                   onChange={e => handleInputChange("contract_address", e.target.value)}
@@ -417,7 +474,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Slogan (max 100 chars)</Label>
+                <Label className="text-[#e0e0e0] py-1">Slogan (max 100 chars)</Label>
                 <Input
                   value={formData.slogan}
                   onChange={e => handleInputChange("slogan", e.target.value)}
@@ -431,7 +488,7 @@ export function PortfolioBuilder() {
               </div>
 
                <div>
-                <Label className="text-[#e0e0e0]">Buy Link * (pump.fun, four.meme, raydium, pancakeswap, etc)</Label>
+                <Label className="text-[#e0e0e0] py-1">Buy Link * (pump.fun, four.meme, raydium, pancakeswap, etc)</Label>
                 <Input
                   value={formData.buy_link}
                   onChange={e => handleInputChange("buy_link", e.target.value)}
@@ -443,7 +500,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Twitter/X URL</Label>
+                <Label className="text-[#e0e0e0] py-1">Twitter/X URL</Label>
                 <Input
                   value={formData.twitter_url}
                   onChange={e => handleInputChange("twitter_url", e.target.value)}
@@ -454,7 +511,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Telegram URL</Label>
+                <Label className="text-[#e0e0e0] py-1">Telegram URL</Label>
                 <Input
                   value={formData.telegram_url}
                   onChange={e => handleInputChange("telegram_url", e.target.value)}
@@ -465,7 +522,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Website URL</Label>
+                <Label className="text-[#e0e0e0] py-1">Website URL</Label>
                 <Input
                   value={formData.website_url}
                   onChange={e => handleInputChange("website_url", e.target.value)}
@@ -476,7 +533,7 @@ export function PortfolioBuilder() {
               </div>
 
               <div>
-                <Label className="text-[#e0e0e0]">Template</Label>
+                <Label className="text-[#e0e0e0] py-1">Template</Label>
                 <Select value={formData.template} onValueChange={val => handleInputChange("template", val)}>
                   <SelectTrigger className={`bg-[#2a2a2a] border ${validationErrors.template ? "border-red-500" : "border-[#444]"} text-white`}>
                     <SelectValue placeholder="Choose a template" />
@@ -546,6 +603,9 @@ export function PortfolioBuilder() {
           <CardTitle className="flex items-center gap-2 text-white">
             <Eye className="h-5 w-5" /> Live Preview
           </CardTitle>
+              <p className="text-sm text-[#bbb] mt-1 italic">
+            Image quality of the preview is lower than the actual DEXPage
+          </p>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg p-2" style={{ background: "#555" }}>

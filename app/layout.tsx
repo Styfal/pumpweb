@@ -18,9 +18,7 @@ export const metadata: Metadata = {
   title: "DEXPage - Instant Token Page Creator",
   description: "Create a token page in 10 seconds for pump.fun, four.meme, and coins traded on DEXs across Solana, Ethereum, BSC & more. Fast, easy, and ready to share",
   icons: {
-    icon: '/powerfulstudios.jpg',
-    shortcut: '/powerfulstudios.jpg',
-    apple: '/powerfulstudios.jpg',
+    icon: '/Photos/powerfulstudios.png'
   },
 };
 
