@@ -60,7 +60,7 @@ const containsBadWords = (text: string): boolean => {
 const portfolioSchema = z.object({
   username: z
     .string()
-    .min(3, "Domain name must be at least 3 characters")
+    .min(2, "Domain name must be at least 2 characters")
     .max(30, "Domain name must be at most 30 characters")
     .regex(/^[\p{L}\p{N}-]+$/u, "Domain can only contain letters, numbers, and hyphens")
     .refine(val => !containsBadWords(val), "Domain name contains inappropriate content")
@@ -74,7 +74,7 @@ const portfolioSchema = z.object({
   ticker: z
     .string()
     .max(10, "Ticker symbol must be at most 10 characters")
-    .regex(/^[A-Z0-9]*$/, "Ticker should only contain uppercase letters and numbers")
+    .regex(/^[\p{L}\p{N}-]+$/u, "Ticker can only contain letters, numbers, and hyphens")
     .refine(val => !containsBadWords(val), "Ticker contains inappropriate content")
     .optional()
     .or(z.literal("")),
