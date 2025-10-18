@@ -2,7 +2,8 @@
 import { MongoClient, Db } from "mongodb";
 
 // ----------------------------------------------------------------------------
-// IMPORTANT: Any route that imports this MUST specify:
+// IMPORTANT: Need to all pre-existing Supabase that was already configured.
+// Run runtime and dynamic on all client for it to work on development
 //   export const runtime = "nodejs";
 //   export const dynamic = "force-dynamic";
 // ----------------------------------------------------------------------------
@@ -24,9 +25,7 @@ const clientOptions = {
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-// Cache the client across hot reloads / serverless invocations
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
@@ -43,5 +42,5 @@ if (process.env.NODE_ENV === "development") {
 
 export async function getDb(): Promise<Db> {
   const c = await clientPromise;
-  return c.db(); // defaults to DB name inside your URI (or "test" if not specified)
+  return c.db(); 
 }
