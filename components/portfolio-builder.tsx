@@ -1,4 +1,4 @@
-"use client"
+"use client" // Notes: Need Chinese characters to be input, like UTF-8 
 
 import type React from "react"
 import { useState, useCallback } from "react"
@@ -7,13 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select"
 import { Upload, Eye, CreditCard, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PortfolioPreview } from "./portfolio-preview"
@@ -21,8 +15,8 @@ import { ImageUpload } from "./image-upload"
 import { PaymentStatusComponent } from "./payment-status"
 import { PaymentService } from "@/lib/payment-service"
 import type { PortfolioFormData } from "@/lib/types"
+import { Filter } from "bad-words"
 
-// Helper function to validate image size (base64)
 const validateImageSize = (base64String: string, maxSizeMB: number = 5): boolean => {
   if (!base64String) return true
   const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, "")
@@ -41,20 +35,10 @@ const isValidUrl = (url: string): boolean => {
   }
 }
 
-// Bad words filter
-const badWords = [
-  "nazi", "hitler", "holocaust", "genocide", "terrorist", "terrorism", 
-  "pedophile", "child porn", "rape", "murder", "kill", "death", "suicide",
-  "drug", "cocaine", "heroin", "meth", "cannabis", "marijuana", "weed",
-  "fuck", "shit", "bitch", "asshole", "damn", "hell", "crap", "piss",
-  "retard", "faggot", "nigger", "chink", "spic", "kike", "wetback",
-  "scam", "fraud", "ponzi", "pyramid", "fake", "counterfeit", "illegal"
-]
-
+const badWordsFilter = new Filter()
 const containsBadWords = (text: string): boolean => {
   if (!text) return false
-  const lowerText = text.toLowerCase()
-  return badWords.some(word => lowerText.includes(word))
+  return badWordsFilter.isProfane(text)
 }
 
 const portfolioSchema = z.object({
@@ -66,18 +50,21 @@ const portfolioSchema = z.object({
     .refine(val => !containsBadWords(val), "Domain name contains inappropriate content")
     .optional()
     .or(z.literal("")),
+
   token_name: z
     .string()
     .min(1, "Token name is required")
     .max(500, "Token name must be at most 500 characters")
     .refine(val => !containsBadWords(val), "Token name contains inappropriate content"),
-  ticker: z
+ 
+    ticker: z
     .string()
     .max(10, "Ticker symbol must be at most 10 characters")
     .regex(/^[\p{L}\p{N}-]+$/u, "Ticker can only contain letters, numbers, and hyphens")
     .refine(val => !containsBadWords(val), "Ticker contains inappropriate content")
     .optional()
     .or(z.literal("")),
+
   buy_link: z
     .string()
     .min(1, "Buy link is required")
