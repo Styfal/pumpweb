@@ -1,5 +1,10 @@
 
 // app/api/create-payment/route.ts
+// This endpoint creates a pending payment record in our database (via mongoDB as seen in the code) when a payment is initiated.
+//  helioChargeId, username, amount, currency, etc is  tracked the payment status later on mongodb, for future adjustments 
+// such as verifying the payment once confirmed by helio.io or tracking any details if the customer needs such information. 
+// This is pretty much a basic POST with error handling for example when the required user input (which is done by a formon the frontend with Zod)
+// has not been filled. 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -59,6 +64,8 @@ export async function POST(request: NextRequest) {
       status: "pending",
       created_at: new Date().toISOString(),
     };
+
+    // We actually neeed hel_paument_od and portfolio_id to track payments properly, because we have to use them for fetching on a different function elsewhere (helio)
 
     console.log("Inserting payment document:", paymentDoc);
     const result = await db.collection("payments").insertOne(paymentDoc);

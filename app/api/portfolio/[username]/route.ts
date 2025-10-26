@@ -18,11 +18,8 @@ interface TemplateDoc {
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   try {
-    // Await the params
     const { username } = await params
     const db = await getDb()
-
-    // 1) Find the published portfolio for this username
     const portfolioRaw = await db.collection("portfolios").findOne(
       { username, is_published: true },
       { projection: { /* keep all fields; you can add an explicit projection if you want */ } }

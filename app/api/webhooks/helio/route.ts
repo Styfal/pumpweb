@@ -1,3 +1,9 @@
+// this file handles incoming webhooks from Helio.io to update payment statuses in our database.
+// It verifies the request using a secret token, parses the payload to extract payment information,
+// and updates the payment status in Mongo, and publishes the associated portfolio if the payment is completed.
+// The specific structure can be seen in Helio Payload which includes the additional JSON to accurately mark completed transactions based on the registered payment ID.
+// That happens in line 92 and onwards with additional error handling such as wrong or missing payment IDs and tokens (which happened when there was an issue with Helio)
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

@@ -1,4 +1,5 @@
-// app/api/payments/status/[paymentId]/route.ts
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

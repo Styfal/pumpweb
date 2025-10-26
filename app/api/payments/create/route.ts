@@ -1,3 +1,10 @@
+// Write explanation
+// this file handles the creation of a payment and associated portfolio in the database when a user initiates a payment process.
+// It validates the input, creates the necessary records in the DB we use and interacts with the Helio payment API
+// The prior to doing the POST, it checks the uniqueness of the username we use the username for the file path customers create for the portfolio they create
+// After some error handling, it POSTS to Helio to create a charge and returns the payment URL to the client for further processing which is placed in the env environment for obvious reasons
+// we use AddtionalJSON to store some extra metadata about the payment such as portfolioId and username for future reference when we need to verify the payment status via webhook or polling
+// if it succeeds we then save portfolio details on DB but as an unpublished set. WE confirm the actual payment in a different component for clarity and fixes later on.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -50,7 +57,7 @@ export async function POST(req: NextRequest) {
     });
     const paymentId = paymentRes.insertedId as ObjectId;
 
-    // 3) Create Helio charge (mirrors your Postman request)
+    // 3) Create Helio charge (mirrors Postman request)
     const HELIO_SECRET = envOrThrowTrim("HELIO_API_KEY_SECRET"); // Bearer
     const HELIO_PUBLIC = envOrThrowTrim("HELIO_API_KEY_PUBLIC"); // Query param
 
