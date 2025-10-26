@@ -1,4 +1,3 @@
-// Write explanation
 // this file handles the creation of a payment and associated portfolio in the database when a user initiates a payment process.
 // It validates the input, creates the necessary records in the DB we use and interacts with the Helio payment API
 // The prior to doing the POST, it checks the uniqueness of the username we use the username for the file path customers create for the portfolio they create
