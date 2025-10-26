@@ -1,4 +1,9 @@
 // app/api/portfolio/[username]/route.ts
+// When payment has been completed (which would have updated the status on MongoDB via the webhook) so that is_published is true and payment status is marked as completed, 
+// the page.tsx corresponding to this will redirect the user to a portfolio with their selected template, and uploaded images, texts etc with their username as the file path. 
+// the async function below looks for the portfolio created on MongoDB, whichincludes the items mentioned above. and the file itself fetches the data needed which will then be returned on the page.tsx
+// That incorporates this file. With ofcourse, with some error handling
+// 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -49,9 +54,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    // 3) Normalize output to mimic your former Supabase shape:
-    //    - convert _id to string id
-    //    - attach `templates` nested object like Supabase `select("*, templates(...))"`
+    // This is where the template panel that gives us a clean and consistent structure for reference on the actual portfolio page.tsx where the portfolio contents are displayed. 
     const portfolio = {
       ...portfolioRaw,
       id: String(portfolioRaw._id),
