@@ -7,7 +7,7 @@ export default function Home() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">DEXPage </h1>
           <p className="text-muted-foreground text-lg">Create your custom token page in <span className="font-bold">10 seconds</span></p>
-          <p className="text-muted-foreground text-lg">Since May 2025, created <span className="font-bold">5,000+</span> pages used across DEXs </p>
+          <p className="text-muted-foreground text-lg">Since May 2025, created <span className="font-bold">100+</span> pages used across DEXs </p>
         </div>
         <PortfolioBuilder />
       </div>
